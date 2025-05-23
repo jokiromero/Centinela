@@ -14,6 +14,7 @@ app_activada = True
 
 # tupla_intervalo_activo = list(intervalos.items())[intervalos.__len__() - 1]
 tupla_intervalo_activo = ("Cada 1 minutos", 1)
+scrap = ScrapperVerkami()
 
 
 def get_logo() -> ImageFile:
@@ -56,6 +57,7 @@ def get_menu() -> Menu:
     menu = Menu(*[
         MenuItem(text="Activada", action=activar_desactivar, checked=lambda item: app_activada),
         MenuItem(text="Intervalos", action=submenu),
+        MenuItem(text="Último valor", action=ultimo_valor),
         MenuItem(text="Salir", action=salir),
     ])
     return menu
@@ -78,22 +80,25 @@ def mostrar_notificacion(
     toast.show()
 
 
+def mostrar_datos():
+    global scrap
+    intervalo = 60 * tupla_intervalo_activo[1]
+    mostrar_notificacion(
+        titulo=scrap.timestamp,
+        msg=f"{scrap.get_salida_tabulada()}"
+    )
+    print(f"{scrap.timestamp} ... {tupla_intervalo_activo[0]=} ... {intervalo/60=}")
+    print(f"{scrap.get_salida_tabulada()}\n-----------------------------------------------------------------\n")
+
+
 def bucle_principal():
-    global app_activada, tupla_intervalo_activo
-    scrap = ScrapperVerkami()
+    global app_activada, tupla_intervalo_activo, scrap
 
     while True:
-        hora = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
         if app_activada:
-            scrap.actualizar_datos()
-            datos_formateados = scrap.get_salida_tabulada()
-            mostrar_notificacion(
-                titulo=hora,
-                msg=f"{datos_formateados}"
-            )
             intervalo = 60 * tupla_intervalo_activo[1]
-            print(f"{hora} ... {tupla_intervalo_activo[0]=} ... {intervalo/60=}")
-            print(f"{datos_formateados}\n-----------------------------------------------------------------\n")
+            scrap.actualizar_datos()
+            mostrar_datos()
             time.sleep(intervalo)
 
 
@@ -116,6 +121,10 @@ def activar_desactivar(icon):
     icon.icon = get_logo()
     icon.menu = get_menu()
     icon.update_menu()
+
+
+def ultimo_valor(icon):
+    mostrar_datos()
 
 
 def salir(icon):
