@@ -26,7 +26,7 @@ Para que tus clientes puedan desplegar y ejecutar tu aplicación, pueden seguir 
     - En Windows: `.venv\Scripts\activate`
     - En macOS/Linux: `source .venv/bin/activate`
 4. *Instalar dependencias*: Ejecutar el comando `pip install -r requirements.txt` para instalar todas las dependencias necesarias para la aplicación.
-5. *Ejecutar la aplicación*: Una vez instaladas las dependencias, puedes ejecutar la aplicación ejecutando el comando `python app/main.py` (o el comando correspondiente a tu aplicación).
+5. *Ejecutar la aplicación*: Una vez instaladas las dependencias, puedes ejecutar la aplicación ejecutando el comando `python -m app.main.py` (o el comando correspondiente a tu aplicación).
 
 *Consejos adicionales*
 
