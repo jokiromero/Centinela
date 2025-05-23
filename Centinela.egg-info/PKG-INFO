@@ -73,7 +73,7 @@ Tras la activaciÃ³n, el prompt del sistema cambiarÃ¡ mostrando el nombre del
 ## EjecuciÃ³n  
 Ejecutar en la lÃ­nea de comandos:
 ~~~
-    (.venv) c:\mi_usuario\Centinela\>  python app\main.py
+    (.venv) c:\mi_usuario\Centinela\>  python app.main.py
 ~~~
 
 

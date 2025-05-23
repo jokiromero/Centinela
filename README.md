@@ -36,7 +36,7 @@ Tras la activación, el prompt del sistema cambiará mostrando el nombre del ent
 ## Ejecución  
 Ejecutar en la línea de comandos:
 ~~~
-    (.venv) c:\mi_usuario\Centinela\>  python app\main.py
+    (.venv) c:\mi_usuario\Centinela\>  python app.main.py
 ~~~
 
 
