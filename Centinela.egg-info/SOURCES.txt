@@ -14,6 +14,7 @@ app/scrapper_verkami.py
 app/tools.py
 app/__pycache__/__init__.cpython-312.pyc
 app/__pycache__/config.cpython-312.pyc
+app/__pycache__/main.cpython-312.pyc
 app/__pycache__/scrapper_verkami.cpython-312.pyc
 documents/Centinela_notas.docx
 images/ojo_abierto.ico

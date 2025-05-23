@@ -49,7 +49,7 @@ Realiza Web Scrapping cada n minutos de un intervalo prefijado por el usuario y 
 2. *Descomprimir ficheros del proyecto*: Esto incluye todos los ficheros y estrcutura de carpetas necesaria para la ejecuciÃ³n de la aplicaciÃ³n.
 3. *Crear un entorno virtual*: En la carpeta del proyecto descomprimido, crear un nuevo entorno virtual ejecutando el comando:
 ~~~
-    (.venv) c:\mi_usuario\Centinela\>  python -m venv .venv
+    c:\mi_usuario\Centinela\>  python -m venv .venv
 ~~~
 
 
@@ -73,7 +73,7 @@ Tras la activaciÃ³n, el prompt del sistema cambiarÃ¡ mostrando el nombre del
 ## EjecuciÃ³n  
 Ejecutar en la lÃ­nea de comandos:
 ~~~
-    (.venv) c:\mi_usuario\Centinela\>  python app/main.py
+    (.venv) c:\mi_usuario\Centinela\>  python app\main.py
 ~~~
 
 
