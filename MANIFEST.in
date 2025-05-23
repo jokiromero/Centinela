@@ -1,0 +1,8 @@
+include requirements.txt
+include README.md
+include MANIFEST.in
+recursive-include images *
+recursive-include documents *
+recursive-include app *
+recursive-exclude notes *
+

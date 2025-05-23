@@ -1,0 +1,16 @@
+beautifulsoup4==4.13.4
+certifi==2025.4.26
+charset-normalizer==3.4.2
+click==8.1.8
+colorama==0.4.6
+gTTS==2.5.4
+idna==3.10
+pillow==11.2.1
+pyglet==2.1.6
+pystray==0.19.5
+requests==2.32.3
+six==1.17.0
+soupsieve==2.7
+typing_extensions==4.13.2
+urllib3==2.4.0
+winotify==1.1.0

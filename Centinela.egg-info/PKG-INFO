@@ -1,0 +1,80 @@
+Metadata-Version: 2.4
+Name: Centinela
+Version: 1.0.0
+Summary: Seguimiento por Web Scrapping del importe recaudado en un Crowdfunding de Verkami
+Author: Joaquín Romero
+Author-email: joki.romero@gmail.com
+Classifier: Development Status :: 3 - Alpha
+Classifier: Intended Audience :: Education
+Classifier: Programming Language :: Python :: 3
+Classifier: Operating System :: Windows
+Requires-Python: >=3.8
+Description-Content-Type: text/markdown
+Requires-Dist: beautifulsoup4==4.13.4
+Requires-Dist: certifi==2025.4.26
+Requires-Dist: charset-normalizer==3.4.2
+Requires-Dist: click==8.1.8
+Requires-Dist: colorama==0.4.6
+Requires-Dist: gTTS==2.5.4
+Requires-Dist: idna==3.10
+Requires-Dist: pillow==11.2.1
+Requires-Dist: pyglet==2.1.6
+Requires-Dist: pystray==0.19.5
+Requires-Dist: requests==2.32.3
+Requires-Dist: six==1.17.0
+Requires-Dist: soupsieve==2.7
+Requires-Dist: typing_extensions==4.13.2
+Requires-Dist: urllib3==2.4.0
+Requires-Dist: winotify==1.1.0
+Dynamic: author
+Dynamic: author-email
+Dynamic: classifier
+Dynamic: description
+Dynamic: description-content-type
+Dynamic: requires-dist
+Dynamic: requires-python
+Dynamic: summary
+
+# **CENTINELA**
+by JoaquÃ­n Romero (c), 2025  
+## Seguimiento automÃ¡tico de los cambios de ciertos valores en una pÃ¡gina de Crowdfunding mediante Web Scrapping  
+  
+## DescripciÃ³n general  
+  
+AplicaciÃ³n de escritorio para Windows que se aloja en la bandeja del sistema y se ejecuta en segundo plano
+Realiza Web Scrapping cada n minutos de un intervalo prefijado por el usuario y extrae informaciÃ³n cuantitavia de una pÃ¡gina Web de Crowdfunding (Verkami).
+  
+## InstalaciÃ³n  
+1. *Instalar Python*: Asegurarse de que Python estÃ© instalado en el PC. Puedes descargar e instalar Python desde el sitio web oficial de Python.
+2. *Descomprimir ficheros del proyecto*: Esto incluye todos los ficheros y estrcutura de carpetas necesaria para la ejecuciÃ³n de la aplicaciÃ³n.
+3. *Crear un entorno virtual*: En la carpeta del proyecto descomprimido, crear un nuevo entorno virtual ejecutando el comando:
+~~~
+    (.venv) c:\mi_usuario\Centinela\>  python -m venv .venv
+~~~
+
+
+4. *Activar el entorno virtual*:
+    - En Windows se hace mediante el siguiente comando:
+~~~
+    c:\mi_usuario\Centinela\>  .venv\Scripts\activate 
+~~~
+
+Tras la activaciÃ³n, el prompt del sistema cambiarÃ¡ mostrando el nombre del entorno virtual entre parÃ©ntesis '(.venv)' delante del prompt:
+~~~
+    (.venv) c:\mi_usuario\Centinela\>  _ 
+~~~
+
+5. *Instalar dependencias*: Ejecutar el siguiente comando instalarÃ¡ en el entorno virtual de la aplicaciÃ³n todos los mÃ³dulos y librerÃ­as que Ã©sta necesita:
+~~~
+    (.venv) c:\mi_usuario\Centinela\>  pip install -r requirements.txt
+~~~
+
+
+## EjecuciÃ³n  
+Ejecutar en la lÃ­nea de comandos:
+~~~
+    (.venv) c:\mi_usuario\Centinela\>  python app/main.py
+~~~
+
+
+
