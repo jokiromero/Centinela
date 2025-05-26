@@ -6,26 +6,26 @@ Author: Joaquín Romero
 Author-email: joki.romero@gmail.com
 Classifier: Development Status :: 3 - Alpha
 Classifier: Intended Audience :: Education
+Classifier: Intended Audience :: End Users/Desktop
+Classifier: Intended Audience :: Developers
+Classifier: License :: OSI Approved :: GNU Lesser General Public License v3 (LGPLv3)
+Classifier: Operating System :: Microsoft :: Windows
+Classifier: Topic :: Desktop Environment
+Classifier: Programming Language :: Python
 Classifier: Programming Language :: Python :: 3
-Classifier: Operating System :: Windows
 Requires-Python: >=3.8
 Description-Content-Type: text/markdown
 Requires-Dist: beautifulsoup4==4.13.4
-Requires-Dist: certifi==2025.4.26
-Requires-Dist: charset-normalizer==3.4.2
-Requires-Dist: click==8.1.8
-Requires-Dist: colorama==0.4.6
 Requires-Dist: gTTS==2.5.4
-Requires-Dist: idna==3.10
 Requires-Dist: pillow==11.2.1
 Requires-Dist: pyglet==2.1.6
 Requires-Dist: pystray==0.19.5
 Requires-Dist: requests==2.32.3
-Requires-Dist: six==1.17.0
-Requires-Dist: soupsieve==2.7
-Requires-Dist: typing_extensions==4.13.2
-Requires-Dist: urllib3==2.4.0
 Requires-Dist: winotify==1.1.0
+Requires-Dist: pandas~=2.2.3
+Requires-Dist: setuptools~=80.8.0
+Requires-Dist: openpyxl~=3.1.5
+Requires-Dist: dataclasses~=0.6
 Dynamic: author
 Dynamic: author-email
 Dynamic: classifier

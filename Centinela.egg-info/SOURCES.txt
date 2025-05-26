@@ -9,13 +9,17 @@ Centinela.egg-info/requires.txt
 Centinela.egg-info/top_level.txt
 app/__init__.py
 app/config.py
+app/datos_persistentes.py
 app/main.py
+app/prueba.py
 app/scrapper_verkami.py
 app/tools.py
 app/__pycache__/__init__.cpython-312.pyc
 app/__pycache__/config.cpython-312.pyc
+app/__pycache__/datos_persistentes.cpython-312.pyc
 app/__pycache__/main.cpython-312.pyc
 app/__pycache__/scrapper_verkami.cpython-312.pyc
+app/__pycache__/tools.cpython-312.pyc
 documents/Centinela_notas.docx
 images/ojo_abierto.ico
 images/ojo_abierto.png
