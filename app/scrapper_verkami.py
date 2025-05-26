@@ -4,32 +4,20 @@ import requests
 from bs4 import BeautifulSoup
 from datetime import datetime
 
-def _formato1(datos: list) -> str:
-    formato = ""
-    formato += f"{datos[0][0]:18} = {datos[0][1]:8d}\n"
-    formato += f"{datos[1][0]:18} = {datos[1][1]:8d}\n"
-    formato += f"{datos[2][0]:18} = {datos[2][1]:11,.2f} €\n"
-    formato += f"{datos[3][0]:18} = {datos[3][1]:11,.2f} €"
-    return formato
-
-
-def _formato2(datos: list) -> str:
-    formato = ""
-    formato += f"{datos[0][1]:4d} {datos[0][0]:11} // {datos[2][1]:10,.0f} € {datos[2][0]:6}\n"
-    formato += f"{datos[1][1]:4d} {datos[1][0]:11} // {datos[3][1]:10,.0f} € {datos[3][0]:6}"
-    return formato
+from app.datos_persistentes import Lectura
 
 
 class ScrapperVerkami:
     """
     Clase reponsable de realizar las operaciones de scrapper
     """
+
     def __init__(self):
         self._url = "https://www.verkami.com/projects/40960-isphanya"
-        self._datos = dict()
+        self._datos_web = Lectura()
         self._timestamp = None
 
-    def actualizar_datos(self):
+    def leer_datos(self):
         # Enviar solicitud GET a la página
         response = requests.get(self._url)
         self._timestamp = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
@@ -51,8 +39,8 @@ class ScrapperVerkami:
             return None
 
         # Extraer los valores y convertirlos a numéricos
-        etiq_campo1 = counter_unit[0].text.strip().split()[0].replace('í', 'i')
-        etiq_campo2 = counter_unit[1].text.strip()
+        etiq_campo1 = counter_unit[0].text.strip().split()[0].replace('í', 'i').capitalize()
+        etiq_campo2 = counter_unit[1].text.strip().capitalize()
         importe_objetivo = float(counter_unit[2].text.strip().replace('€', '')
                                  .replace('.', '').replace(',', '.')
                                  .replace('De ', ''))
@@ -70,23 +58,16 @@ class ScrapperVerkami:
         valor_campo2 = int(counter_values[1].text.strip().replace('.', ''))
         importe_recaudado = float(counter_values[2].text.strip().replace('€', '').replace('.', '').replace(',', '.'))
 
-        self._datos = dict()
-        self._datos[etiq_campo1] = valor_campo1
-        self._datos[etiq_campo2] = valor_campo2
-        self._datos["Inicio"] = importe_objetivo
-        self._datos["Actual"] = importe_recaudado
+        self._datos_web = Lectura(
+            dias=valor_campo1,
+            aportaciones=valor_campo2,
+            objetivo=importe_objetivo,
+            total=importe_recaudado
+        )
 
-    def get_salida_tabulada(self) -> str:
-        datos = list(self._datos.items())
-        # salida = _formato1(datos)
-        salida = _formato2(datos)
-        return salida
+        return self.datos_web
 
     @property
-    def datos(self) -> dict[str, Any]:
-        return self._datos
-
-    @property
-    def timestamp(self) -> str:
-        return self._timestamp
+    def datos_web(self) -> Lectura:
+        return self._datos_web
 
