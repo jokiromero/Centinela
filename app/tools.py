@@ -31,12 +31,11 @@ def notification_win(
         msg: str,
         titulo="",
         error=False,
-        aplicacion=config.APP_NOMBRE
+        aplicacion=config.APP_NOMBRE,
+        con_voz=False
 ):
     # nombre_fichero = os.path.join(os.getcwd(), "images\\reus_peq.ico")
     fich_icono = os.path.join(os.getcwd(), "images\\eye.svg")
-    if error:
-        titulo = "Error: " + titulo
 
     cartelito = Notification(
         app_id=aplicacion,
@@ -47,8 +46,13 @@ def notification_win(
     )
     cartelito.show()
 
+    if con_voz:
+        hilo_hablar = Thread(target=hablar,
+                             kwargs={"msg": msg, "error": error, "beep": beep})
+        hilo_hablar.start()
 
-def hablar(msg: str, beep=True, error=False):
+
+def hablar(msg: str, beep=False, error=False):
     bloqueo_hablar.acquire()
     if beep:
         _beep(error)
@@ -88,7 +92,6 @@ def exportar_excel(
         mode: str = "w",
         ancho_columnas: dict = None
 ) -> None:
-
     """
         Facilita la exportanción a Excel de Pandas.DataFrames
             fich = Nombre completo del fichero Excel de salida

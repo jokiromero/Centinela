@@ -8,7 +8,8 @@ Classifier: Development Status :: 3 - Alpha
 Classifier: Intended Audience :: Education
 Classifier: Intended Audience :: End Users/Desktop
 Classifier: Intended Audience :: Developers
-Classifier: License :: OSI Approved :: GNU Lesser General Public License v3 (LGPLv3)
+Classifier: License :: OSI Approved :: GNU General Public License (GPL)
+Classifier: License :: Free for non-commercial use
 Classifier: Operating System :: Microsoft :: Windows
 Classifier: Topic :: Desktop Environment
 Classifier: Programming Language :: Python

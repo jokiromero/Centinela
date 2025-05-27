@@ -13,7 +13,7 @@ cols = {
     "f": "Fecha",
     "d": "Dias",
     "a": "Aportaciones",
-    "o": "Obj",
+    "o": "Objetivo",
     "t": "Total"
 }
 
@@ -28,6 +28,9 @@ class Lectura:
 
     def get_fecha(self) -> datetime:
         return datetime.strptime(self.fecha, "%Y-%m-%d  %H:%M:%S")
+
+    def set_fecha(self) -> None:
+        self.fecha = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
 
 
 class DatosPersistentes:
@@ -68,10 +71,14 @@ class DatosPersistentes:
     @lectura_nueva.setter
     def lectura_nueva(self, datos_nuevos: Lectura):
         self._lectura_nueva = copy(datos_nuevos)
+        self._lectura_nueva.set_fecha()
 
         if self.datos_cambiados:
             print("lectura_nueva() ha detectado que los datos_web han cambiado...")
-            nueva_fila = pd.DataFrame(asdict(datos_nuevos), index=[0])
+            d = asdict(datos_nuevos)
+            for clave in list(d.keys()):
+                d[clave.capitalize()] = d.pop(clave)
+            nueva_fila = pd.DataFrame(d, index=[0])
             self._df = pd.concat(objs=[self._df, nueva_fila], ignore_index=True)
             self._guardar_lectura()
 
@@ -84,6 +91,7 @@ class DatosPersistentes:
 
     def _guardar_lectura(self):
         if self._fichero:
+
             tools.exportar_excel(fich=self._fichero, data={"Hoja1": self._df})
 
         print(f"_guardar_lectura() conserva una copia de la lectura nueva como anterior: {self.lectura_nueva}")
@@ -104,7 +112,7 @@ class DatosPersistentes:
 
         def _formato2(lec: Lectura) -> str:
             fmt = ""
-            fmt += f"{lec.dias} {cols["d"]}.  {cols["o"]}: {lec.objetivo:7,.0f} €\n"
+            fmt += f"{lec.dias} {cols["d"]}.  {cols["o"]}[:2]: {lec.objetivo:7,.0f} €\n"
             fmt += f"{lec.aportaciones} {cols["a"][:5]}. {cols["t"]}: {lec.total:7,.0f} €\n"
             fmt += f"({(lec.total / lec.aportaciones):,.0f} € promedio por cada una)"
             return fmt

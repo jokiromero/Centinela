@@ -9,12 +9,14 @@ import os
 from PIL import ImageFile
 from pystray import Icon, Menu, MenuItem
 from winotify import Notification
-
+from num2words import num2words
 from app import config
+from app.tools import hablar
 from app.scrapper_verkami import ScrapperVerkami
 from app.datos_persistentes import DatosPersistentes
 
 app_activada = True
+voz_activada = True
 
 # tupla_intervalo_activo = list(intervalos.items())[intervalos.__len__() - 1]
 tupla_intervalo_activo = ("Cada 1 minutos", 1)
@@ -50,8 +52,11 @@ def get_menu() -> Menu:
                  action=lambda icon: accion_fijar_notificaciones(icon, valor=config.Notificaciones.SOLO_CAMBIOS),
                  checked=lambda item: tipo_notificaciones_activo == 0),
         MenuItem(text="Todos los intervalos", radio=True,
-                 action=lambda icon: accion_fijar_notificaciones(icon, valor=config.Notificaciones.TODOS_LOS_INTERVAVLOS1),
+                 action=lambda icon: accion_fijar_notificaciones(icon,
+                                                                 valor=config.Notificaciones.TODOS_LOS_INTERVALOS),
                  checked=lambda item: tipo_notificaciones_activo == 1),
+        Menu.SEPARATOR,
+        MenuItem(text="Con voz", action=accion_activar_voz, checked=lambda item: voz_activada),
     ])
     menu = Menu(*[
         MenuItem(text="Activada", action=accion_activar_desactivar, checked=lambda item: app_activada),
@@ -97,6 +102,15 @@ def mostrar_datos():
             msg=f"{data.get_salida_tabulada(2)}",
             sonido=melodia
         )
+        if voz_activada:
+            numero = num2words(number=data.lectura_nueva.total, lang="es")
+            msg = f"Atención: se ha alcanzado un total de {numero} euros"
+            hilo_hablar = threading.Thread(
+                target=hablar,
+                kwargs={"msg": msg, "error": False, "beep": False}
+            )
+            hilo_hablar.start()
+
     print(f"{data.lectura_nueva.fecha} ... {tupla_intervalo_activo[0]=}")
     print(f"{data.get_salida_tabulada(0)}\n-----------------------------------------------------------------\n")
 
@@ -128,6 +142,14 @@ def accion_fijar_intervalo(icon, texto_intervalo):
 def accion_fijar_notificaciones(icon, valor=0):
     global tipo_notificaciones_activo
     tipo_notificaciones_activo = valor if valor in (0, 1) else 0
+    icon.menu = get_menu()
+    icon.update_menu()
+
+
+def accion_activar_voz(icon):
+    global voz_activada
+    voz_activada = not voz_activada
+    icon.icon = get_logo()
     icon.menu = get_menu()
     icon.update_menu()
 

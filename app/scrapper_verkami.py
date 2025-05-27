@@ -1,8 +1,7 @@
-from typing import Any
+from datetime import datetime
 
 import requests
 from bs4 import BeautifulSoup
-from datetime import datetime
 
 from app.datos_persistentes import Lectura
 
@@ -17,7 +16,7 @@ class ScrapperVerkami:
         self._datos_web = Lectura()
         self._timestamp = None
 
-    def leer_datos(self):
+    def leer_datos(self) -> Lectura | None:
         # Enviar solicitud GET a la página
         response = requests.get(self._url)
         self._timestamp = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
@@ -59,6 +58,7 @@ class ScrapperVerkami:
         importe_recaudado = float(counter_values[2].text.strip().replace('€', '').replace('.', '').replace(',', '.'))
 
         self._datos_web = Lectura(
+            fecha=self._timestamp,
             dias=valor_campo1,
             aportaciones=valor_campo2,
             objetivo=importe_objetivo,
@@ -70,4 +70,3 @@ class ScrapperVerkami:
     @property
     def datos_web(self) -> Lectura:
         return self._datos_web
-
