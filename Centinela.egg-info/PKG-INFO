@@ -10,7 +10,6 @@ Classifier: Development Status :: 3 - Alpha
 Classifier: Intended Audience :: Education
 Classifier: Intended Audience :: End Users/Desktop
 Classifier: Intended Audience :: Developers
-Classifier: License :: GPL-3.0-or-later
 Classifier: Operating System :: Microsoft :: Windows
 Classifier: Topic :: Desktop Environment
 Classifier: Programming Language :: Python

@@ -23,7 +23,7 @@ setup(
         "Intended Audience :: Education",
         "Intended Audience :: End Users/Desktop",
         "Intended Audience :: Developers",
-        "License :: GPL-3.0-or-later",
+        # "License :: GPL-3.0-or-later",
         "Operating System :: Microsoft :: Windows",
         "Topic :: Desktop Environment",
         "Programming Language :: Python",
