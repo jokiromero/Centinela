@@ -3,7 +3,7 @@ from datetime import datetime
 import requests
 from bs4 import BeautifulSoup
 
-from app.datos_persistentes import Lectura
+from centinela.datos_persistentes import Lectura
 
 
 class ScrapperVerkami:
@@ -38,6 +38,10 @@ class ScrapperVerkami:
             return None
 
         # Extraer los valores y convertirlos a numéricos
+        #   Las etiquetas etiq_campo1 y 2 no se usan más adelante, pero se mantienen porque se podrían utilizar
+        #   para verificar si los valores numéricos se refieren realmente a los campos "días" y "aportaciones" ya que
+        #   se ha observado en otros proyectos VERKAMI que podrían ser otros campos distintos.
+        # todo: utilizar etiq_campo1 y etiq_campo2 para verificiar a qué campos se refieren los valores leídos
         etiq_campo1 = counter_unit[0].text.strip().split()[0].replace('í', 'i').capitalize()
         etiq_campo2 = counter_unit[1].text.strip().capitalize()
         importe_objetivo = float(counter_unit[2].text.strip().replace('€', '')
@@ -62,7 +66,7 @@ class ScrapperVerkami:
             dias=valor_campo1,
             aportaciones=valor_campo2,
             objetivo=importe_objetivo,
-            total=importe_recaudado
+            total=importe_recaudado,
         )
 
         return self.datos_web

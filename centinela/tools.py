@@ -1,61 +1,46 @@
 import os
 import time
+from os import PathLike
+from threading import Thread, Lock
+
 import pyglet
-import winsound
-import pandas as pd
+import winotify
+
 import openpyxl
 import openpyxl.utils
-
-from threading import Thread, Lock
+import pandas as pd
 from gtts import gTTS
-from winotify import Notification
 from openpyxl.styles import Alignment, Font, PatternFill
-from os import PathLike
 
-from app import config
+from centinela import config
 
 bloqueo_hablar = Lock()
 
 
-def avisos(msg: str, titulo="", error=False, hablado=True, beep=True):
-    notification_win(msg, titulo, error)
-    if hablado:
-        hilo_hablar = Thread(
-            target=hablar,
-            kwargs={"msg": msg, "error": error, "beep": beep}
-        )
-        hilo_hablar.start()
-
-
-def notification_win(
-        msg: str,
-        titulo="",
-        error=False,
-        aplicacion=config.APP_NOMBRE,
-        con_voz=False
+def mostrar_notificacion(
+        titulo: str = "Atención...",
+        msg: str = "Aplicación Centinela, ejecutándose en "
+                   "segundo plano desde la bandeja del sistema...",
+        sonido=winotify.audio.Reminder,
+        msg_hablado: str = ""
 ):
-    # nombre_fichero = os.path.join(os.getcwd(), "images\\reus_peq.ico")
-    fich_icono = os.path.join(os.getcwd(), "images\\eye.svg")
-
-    cartelito = Notification(
-        app_id=aplicacion,
+    toast = winotify.Notification(
+        app_id=config.APP_NOMBRE,
         title=titulo,
         msg=msg,
-        duration="long",
-        icon=fich_icono
+        duration="short",
+        icon=config.ICONO_ACTIVO_FICH
     )
-    cartelito.show()
+    toast.set_audio(sonido, loop=False)
+    toast.show()
 
-    if con_voz:
-        hilo_hablar = Thread(target=hablar,
-                             kwargs={"msg": msg, "error": error, "beep": beep})
+    if msg_hablado:
+        hilo_hablar = Thread(target=hablar, kwargs={"msg": msg_hablado})
         hilo_hablar.start()
 
 
-def hablar(msg: str, beep=False, error=False):
+def hablar(msg: str):
     bloqueo_hablar.acquire()
-    if beep:
-        _beep(error)
 
     fichero = os.path.join(os.getcwd(), r"tmp\hablar.mp3")
 
@@ -71,18 +56,6 @@ def hablar(msg: str, beep=False, error=False):
         os.remove(fichero)
 
     bloqueo_hablar.release()
-
-
-def _beep(error=False):
-    normal_sound = os.path.join(
-        os.getcwd(), "images\\mixkit-melodic-bonus-collect-1938.wav"
-    )
-    error_sound = os.path.join(
-        os.getcwd(), "images\\Error.wav"
-    )
-    fichero = error_sound if error else normal_sound
-    winsound.PlaySound(fichero, winsound.SND_ASYNC)
-    time.sleep(1.5)
 
 
 def exportar_excel(
@@ -175,3 +148,8 @@ def exportar_excel(
                 if new_column_length > 0:
                     ws.column_dimensions[
                         new_column_letter].width = new_column_length + 1
+
+                # todo: alinear las columnas numéricas a la derecha
+                #  column_cells[0].value ==> nombre de la columna
+                #  tipo float ==> issubclass(float, type(column_cells[1].value)
+                #  tipo int ==> issubclass(int, type(column_cells[1].value)

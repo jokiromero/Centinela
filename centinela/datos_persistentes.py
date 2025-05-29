@@ -1,13 +1,12 @@
 import os
 from copy import copy
+from dataclasses import dataclass, asdict
+from datetime import datetime
+from typing import Literal
 
 import pandas as pd
 
-from typing import Any, Literal
-from datetime import datetime
-from dataclasses import dataclass, asdict
-
-from app import tools
+from centinela import tools
 
 cols = {
     "f": "Fecha",
@@ -20,14 +19,17 @@ cols = {
 
 @dataclass
 class Lectura:
-    fecha: str = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+    fecha: str = ""
     dias: int = 0
     aportaciones: int = 0
     objetivo: float = 0
-    total: float | None = None
+    total: float = 0
 
     def get_fecha(self) -> datetime:
-        return datetime.strptime(self.fecha, "%Y-%m-%d  %H:%M:%S")
+        ret = None
+        if self.fecha:
+            ret = datetime.strptime(self.fecha, "%Y-%m-%d %H:%M:%S")
+        return ret
 
     def set_fecha(self) -> None:
         self.fecha = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
@@ -45,23 +47,26 @@ class DatosPersistentes:
 
         if nombre_fichero:
             if os.path.isfile(self._fichero):
-                columnas = str(", ".join(cols))
                 self._df = pd.read_excel(self._fichero)
-                if self._df.shape[0] > 0:  # Si tiene al menos un registro
-                    self._df.sort_values(by=cols["f"], inplace=True)
-                    self._lectura_anterior = Lectura(
-                        fecha=self._df.iloc[-1][cols["f"]],
-                        dias=self._df.iloc[-1][cols["d"]],
-                        aportaciones=self._df.iloc[-1][cols["a"]],
-                        objetivo=self._df.iloc[-1][cols["o"]],
-                        total=self._df.iloc[-1][cols["t"]],
-                    )
+                if self._df.shape[0] == 0:
+                    raise ValueError(f"Fichero vacío '{self._fichero}'")
+
+                self._df.sort_values(by=cols["f"], inplace=True)
+                self._lectura_anterior = Lectura(
+                    fecha=self._df.iloc[-1][cols["f"]],
+                    dias=self._df.iloc[-1][cols["d"]],
+                    aportaciones=self._df.iloc[-1][cols["a"]],
+                    objetivo=self._df.iloc[-1][cols["o"]],
+                    total=self._df.iloc[-1][cols["t"]],
+                )
 
     @property
     def datos_cambiados(self) -> bool:
         ret = False
-        if self.lectura_anterior.total is None or self.lectura_anterior.total != self.lectura_nueva.total:
+        if ((self.lectura_anterior.fecha == "" and self.lectura_nueva.fecha != "")
+                or self.lectura_anterior.total != self.lectura_nueva.total):
             ret = True
+
         return ret
 
     @property
@@ -71,7 +76,9 @@ class DatosPersistentes:
     @lectura_nueva.setter
     def lectura_nueva(self, datos_nuevos: Lectura):
         self._lectura_nueva = copy(datos_nuevos)
-        self._lectura_nueva.set_fecha()
+
+        if not self._lectura_nueva.fecha:
+            self._lectura_nueva.set_fecha()
 
         if self.datos_cambiados:
             print("lectura_nueva() ha detectado que los datos_web han cambiado...")
@@ -80,22 +87,21 @@ class DatosPersistentes:
                 d[clave.capitalize()] = d.pop(clave)
             nueva_fila = pd.DataFrame(d, index=[0])
             self._df = pd.concat(objs=[self._df, nueva_fila], ignore_index=True)
-            self._guardar_lectura()
+
+            # ---------------- GUARDAR FICHERO
+            if self._fichero:
+                tools.exportar_excel(fich=self._fichero, data={"Hoja1": self._df})
+
+            print(f"_guardar_lectura() conserva una copia de la lectura nueva como anterior: {self.lectura_nueva}")
+            self._lectura_anterior = copy(self.lectura_nueva)
+            print(f"_guardar_lectrua() copia = {self.lectura_anterior}")
 
     @property
-    def lectura_anterior(self) -> Lectura | None:
+    def  lectura_anterior(self) -> Lectura | None:
         if self._lectura_anterior:
             return self._lectura_anterior
         else:
             return None
-
-    def _guardar_lectura(self):
-        if self._fichero:
-
-            tools.exportar_excel(fich=self._fichero, data={"Hoja1": self._df})
-
-        print(f"_guardar_lectura() conserva una copia de la lectura nueva como anterior: {self.lectura_nueva}")
-        self._lectura_anterior = copy(self.lectura_nueva)
 
     def get_salida_tabulada(self, formato: Literal[0, 1, 2]) -> str:
         def _formato0(lec: Lectura) -> str:
@@ -112,9 +118,9 @@ class DatosPersistentes:
 
         def _formato2(lec: Lectura) -> str:
             fmt = ""
-            fmt += f"{lec.dias} {cols["d"]}.  {cols["o"]}[:2]: {lec.objetivo:7,.0f} €\n"
+            fmt += f"{lec.dias} {cols["d"]}.  {cols["o"][:3]}: {lec.objetivo:7,.0f} €\n"
             fmt += f"{lec.aportaciones} {cols["a"][:5]}. {cols["t"]}: {lec.total:7,.0f} €\n"
-            fmt += f"({(lec.total / lec.aportaciones):,.0f} € promedio por cada una)"
+            fmt += f"({(lec.total / lec.aportaciones):,.0f} € promedio por aport.)"
             return fmt
 
         salida = ""

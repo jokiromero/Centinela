@@ -4,12 +4,12 @@ by Joaquín Romero (c), 2025
   
 ## Descripción general  
   
-Aplicación de escritorio para Windows que se aloja en la bandeja del sistema y se ejecuta en segundo plano
-Realiza Web Scrapping cada n minutos de un intervalo prefijado por el usuario y extrae información cuantitavia de una página Web de Crowdfunding (Verkami).
+Aplicación de escritorio para Windows que se aloja en la bandeja del sistema y se ejecuta en segundo plano.
+Realiza Web Scrapping cada 'n' minutos de un intervalo prefijado por el usuario y extrae información cuantitativa de una página Web de Crowdfunding (Verkami).
   
 ## Instalación  
 1. *Instalar Python*: Asegurarse de que Python esté instalado en el PC. Puedes descargar e instalar Python desde el sitio web oficial de Python.
-2. *Descomprimir ficheros del proyecto*: Esto incluye todos los ficheros y estrcutura de carpetas necesaria para la ejecución de la aplicación.
+2. *Descomprimir ficheros del proyecto*: Esto incluye todos los ficheros y estructura de carpetas necesaria para la ejecución de la aplicación.
 3. *Crear un entorno virtual*: En la carpeta del proyecto descomprimido, crear un nuevo entorno virtual ejecutando el comando:
 ~~~
     c:\mi_usuario\Centinela\>  python -m venv .venv

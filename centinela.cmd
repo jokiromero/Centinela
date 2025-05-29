@@ -1,2 +1,3 @@
 @echo off
-python -m app.main
+.venv\Scripts\activate.bat
+python -m centinela.main
