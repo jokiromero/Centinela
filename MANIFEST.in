@@ -4,6 +4,6 @@ include MANIFEST.in
 include centinela.cmd
 recursive-include images *
 recursive-include documents *
+recursive-include dist *
 recursive-include centinela *
-recursive-exclude notes *
 

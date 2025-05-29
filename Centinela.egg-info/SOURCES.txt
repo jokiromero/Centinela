@@ -20,6 +20,7 @@ centinela/__pycache__/datos_persistentes.cpython-312.pyc
 centinela/__pycache__/main.cpython-312.pyc
 centinela/__pycache__/scrapper_verkami.cpython-312.pyc
 centinela/__pycache__/tools.cpython-312.pyc
+dist/centinela-1.3.tar.gz
 documents/Centinela_notas.docx
 images/ojo_abierto.ico
 images/ojo_abierto.png
