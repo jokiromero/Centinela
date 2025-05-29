@@ -8,6 +8,7 @@ Centinela.egg-info/SOURCES.txt
 Centinela.egg-info/dependency_links.txt
 Centinela.egg-info/requires.txt
 Centinela.egg-info/top_level.txt
+_tools/install.cmd
 centinela/__init__.py
 centinela/config.py
 centinela/datos_persistentes.py
