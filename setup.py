@@ -31,7 +31,7 @@ setup(
     ],
     python_requires=">=3.8",
     install_requires=requeridos,
-    scripts=["main.py",],
+    # scripts=["main.py",],
     # py_modules=["config.py", "datos_persistentes.py", "scrapper_verkami.py", "tools.py"],
     packages=paquetes,
     include_package_data=True,  # incluir todos los ficheros del proyecto seiguiendo lo indicado en MANIFIEST.in
