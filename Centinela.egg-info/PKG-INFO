@@ -1,6 +1,6 @@
 Metadata-Version: 2.4
 Name: Centinela
-Version: 1.2.20250529
+Version: 1.3
 Summary: Seguimiento por Web Scrapping del importe recaudado en un Crowdfunding de Verkami
 Home-page: https://github.com/jokiromero/Centinela
 Author: Joaquín Romero
@@ -10,7 +10,7 @@ Classifier: Development Status :: 3 - Alpha
 Classifier: Intended Audience :: Education
 Classifier: Intended Audience :: End Users/Desktop
 Classifier: Intended Audience :: Developers
-Classifier: GPL-3.0-or-later
+Classifier: License :: GPL-3.0-or-later
 Classifier: Operating System :: Microsoft :: Windows
 Classifier: Topic :: Desktop Environment
 Classifier: Programming Language :: Python

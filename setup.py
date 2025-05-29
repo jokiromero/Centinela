@@ -10,7 +10,7 @@ print(f"{paquetes=}")
 
 setup(
     name="Centinela",
-    version="1.2.20250529",
+    version="1.3",
     author="Joaquín Romero",
     author_email="joki.romero@gmail.com",
     description="Seguimiento por Web Scrapping del importe recaudado en un Crowdfunding de Verkami",
@@ -23,7 +23,7 @@ setup(
         "Intended Audience :: Education",
         "Intended Audience :: End Users/Desktop",
         "Intended Audience :: Developers",
-        "GPL-3.0-or-later",
+        "License :: GPL-3.0-or-later",
         "Operating System :: Microsoft :: Windows",
         "Topic :: Desktop Environment",
         "Programming Language :: Python",
@@ -31,7 +31,7 @@ setup(
     ],
     python_requires=">=3.8",
     install_requires=requeridos,
-    scripts=["centinela.main.py",],
+    scripts=["main.py",],
     # py_modules=["config.py", "datos_persistentes.py", "scrapper_verkami.py", "tools.py"],
     packages=paquetes,
     include_package_data=True,  # incluir todos los ficheros del proyecto seiguiendo lo indicado en MANIFIEST.in

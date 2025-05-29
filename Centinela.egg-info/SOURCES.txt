@@ -1,5 +1,6 @@
 MANIFEST.in
 README.md
+centinela.cmd
 requirements.txt
 setup.py
 Centinela.egg-info/PKG-INFO
@@ -13,6 +14,12 @@ centinela/datos_persistentes.py
 centinela/main.py
 centinela/scrapper_verkami.py
 centinela/tools.py
+centinela/__pycache__/__init__.cpython-312.pyc
+centinela/__pycache__/config.cpython-312.pyc
+centinela/__pycache__/datos_persistentes.cpython-312.pyc
+centinela/__pycache__/main.cpython-312.pyc
+centinela/__pycache__/scrapper_verkami.cpython-312.pyc
+centinela/__pycache__/tools.cpython-312.pyc
 documents/Centinela_notas.docx
 images/ojo_abierto.ico
 images/ojo_abierto.png
