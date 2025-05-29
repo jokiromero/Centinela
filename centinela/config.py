@@ -1,4 +1,6 @@
 import os
+import pathlib
+
 from enum import IntEnum
 
 from PIL import Image
@@ -22,7 +24,8 @@ voz_activada = False
 tupla_intervalo_activo = ("Cada 1 minutos", 1)
 tipo_notificaciones_activo = Notificaciones.TODOS_LOS_INTERVALOS
 
-carpeta = os.getcwd()
+# carpeta = os.getcwd()
+carpeta = pathlib.Path(__file__).parent.parent
 print(f"{carpeta=}")
 LOGO_ACTIVO = Image.open(os.path.join(carpeta, r"images\ojo_abierto.png"))
 LOGO_INACTIVO = Image.open(os.path.join(carpeta, r"images\ojo_cerrado.png"))
