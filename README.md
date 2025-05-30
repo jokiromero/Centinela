@@ -1,14 +1,15 @@
-<h1 align="center">
-    <span>Centinela</span>
-  <img width="auto" height="50px" src="https://github.com/jokiromero/Centinela/centinela/centinela/images/ojo_abierto.png"/>
+<span align="center">
+<h1>
+   <img width="auto" height="35px" src="https://github.com/jokiromero/Centinela/blob/master/centinela/images/ojo_abierto.png"/>
+   <p><font size="15px">Centinela</font></p>
 </h1>
+<p><font size="2"><i>by Joaquín Romero (c), 2025</i></font></p>
+<p><font size="14"><strong>Seguimiento automático de los cambios de ciertos valores en una página de Crowdfunding mediante Web Scrapping</strong></font></p>
+</span>
+ 
+<hr />
 
-[//]: # (# **CENTINELA**)
-by Joaquín Romero (c), 2025  
-## Seguimiento automático de los cambios de ciertos valores en una página de Crowdfunding mediante Web Scrapping  
-  
 ## ✨ Descripción general  
-  
 Aplicación de escritorio para Windows que se aloja en la bandeja del sistema y se ejecuta en segundo plano.
 Realiza Web Scrapping cada 'n' minutos de un intervalo prefijado por el usuario y extrae información cuantitativa de una página Web de Crowdfunding (Verkami).
   
