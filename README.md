@@ -1,8 +1,8 @@
 <h1 align="center">
    <img width="auto" height="35px" src="https://github.com/jokiromero/Centinela/blob/master/centinela/images/ojo_abierto.png"/>
    <p><font size="18px">Centinela</font></p>
-   <p><font size="2"><i>by Joaquín Romero (c), 2025</i></font></p>
 </h1>
+<p align="center"><font size="2"><i>by Joaquín Romero (c), 2025</i></font></p>
 <h1 align="center">Seguimiento automático de los cambios de ciertos valores en una página de Crowdfunding mediante Web Scrapping</h1>
 
  
@@ -19,7 +19,7 @@ Realiza Web Scrapping cada 'n' minutos de un intervalo prefijado por el usuario 
    c:\users\mi_usuario\>  python -m venv .centinela
 ~~~
 
-3. Activar el entorno virtual*:
+3. *Activar el entorno virtual*:
     - En Windows se hace mediante el siguiente comando:
 ~~~
     c:\users\mi_usuario\>  .centinela\Scripts\activate 
@@ -44,19 +44,29 @@ Cuando no se vaya a usar, podrá desactivarse mediante el comando ` .centinela\S
 ~~~
 (donde `<version>` debe ser sustituido por los dígitos que identifican la versión de que se trate. Por ejemplo `centinela-1.3`)
 
-
-
-5. *Instalar dependencias*: Ejecutar el siguiente comando instalará en el entorno virtual de la aplicación todos los módulos y librerías que ésta necesita:
-~~~
-    (.centinela) c:\users\mi_usuario\Centinela\>  pip install -r requirements.txt
-~~~
-
-
 ## 📜 Ejecución  
 Ejecutar en la línea de comandos:
 ~~~
-    (.venv) c:\users\mi_usuario\Centinela\>  python -m app.main
+    (.centinela) c:\users\mi_usuario\>  python -m centinela.main
 ~~~
 
-🤝🌟🔧💻
+Nótese que siempre que esté activado el entorno virtual donde hayamos instalado el paquete, no importará en qué directorio nos eoncontremos ya que la aplicación se ejecutará dentro del entorno virtual y ésta no tienen ninguna dependencia fuera del mismo (no realiza ininguna referencia a una carpeta que no forme parte de su árbol de carpetas)
+
+## 🔧 Instalación sucesiva (actualizaciones):
+Los pasos a dar serían los siguientes:
+1. *Activar el entorno virtual*
+2. *Desistalar la versión previa*
+~~~
+    (.centinela) c:\users\mi_usuario\>  pip uninstall centinela 
+~~~
+3. *Instalar la nueva versión*
+Repetir el procedimiento ya explicado según usemos un paquete local o tengamos que descargar el paquete desde GitHub.com
+ 
+
+
+
+
+
+
+🤝🌟💻
 
