@@ -118,7 +118,7 @@ class DatosPersistentes:
 
         def _formato2(lec: Lectura) -> str:
             fmt = ""
-            fmt += f"{lec.dias} {cols['d']}.  {cols["o"][:3]}: {lec.objetivo:7,.0f} €\n"
+            fmt += f"{lec.dias} {cols['d']}.  {cols['o'][:3]}: {lec.objetivo:7,.0f} €\n"
             fmt += f"{lec.aportaciones} {cols['a'][:5]}. {cols['t']}: {lec.total:7,.0f} €\n"
             fmt += f"({(lec.total / lec.aportaciones):,.0f} € promedio por aport.)"
             return fmt
