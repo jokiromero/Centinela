@@ -25,8 +25,8 @@ tupla_intervalo_activo = ("Cada 1 minutos", 1)
 tipo_notificaciones_activo = Notificaciones.TODOS_LOS_INTERVALOS
 
 # carpeta = os.getcwd()
-carpeta = pathlib.Path(__file__).parent.parent
-print(f"{carpeta=}")
+carpeta = pathlib.Path(__file__).parent
+# print(f"{carpeta=}")
 LOGO_ACTIVO = Image.open(os.path.join(carpeta, r"images\ojo_abierto.png"))
 LOGO_INACTIVO = Image.open(os.path.join(carpeta, r"images\ojo_cerrado.png"))
 ICONO_ACTIVO_FICH = os.path.join(carpeta, r"images\ojo_abierto.ico")
