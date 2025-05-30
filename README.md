@@ -1,6 +1,6 @@
 <h1 align="center">
     <span>Centinela</span>
-  <img width="auto" height="50px" src="https://github.com/jokiromero/Centinela/centinela/images/ojo_abierto.png"/>
+  <img width="auto" height="50px" src="https://github.com/jokiromero/Centinela/centinela/centinela/images/ojo_abierto.png"/>
 </h1>
 
 [//]: # (# **CENTINELA**)
