@@ -53,13 +53,18 @@ Ejecutar en la línea de comandos:
 Nótese que siempre que esté activado el entorno virtual donde hayamos instalado el paquete, no importará en qué directorio nos eoncontremos ya que la aplicación se ejecutará dentro del entorno virtual y ésta no tienen ninguna dependencia fuera del mismo (no realiza ininguna referencia a una carpeta que no forme parte de su árbol de carpetas)
 
 ## 🔧 Instalación sucesiva (actualizaciones):
-Los pasos a dar serían los siguientes:
+
+Los pasos que hay que dar son los siguientes:
 1. *Activar el entorno virtual*
 2. *Desistalar la versión previa*
+
 ~~~
     (.centinela) c:\users\mi_usuario\>  pip uninstall centinela 
 ~~~
-3. *Instalar la nueva versión*
+En algunos casos, este paso no es necesario y la propia reinstalación del nuevo paquete sustituye al anterior.
+
+4. *Instalar la nueva versión*:
+
 Repetir el procedimiento ya explicado según usemos un paquete local o tengamos que descargar el paquete desde GitHub.com
  
 
