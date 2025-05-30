@@ -1,4 +1,5 @@
 import os
+from pathlib import Path
 import time
 from os import PathLike
 from threading import Thread, Lock
@@ -41,9 +42,11 @@ def mostrar_notificacion(
 
 def hablar(msg: str):
     bloqueo_hablar.acquire()
+    carpeta = os.path.join(Path(__file__).parent, "tmp")
+    if not os.path.isdir(carpeta):
+        os.mkdir(carpeta)
 
-    fichero = os.path.join(os.getcwd(), r"tmp\hablar.mp3")
-
+    fichero = os.path.join(carpeta, "hablar.mp3")
     tts = gTTS(text=msg, lang="es", tld="es", slow=False)
     if os.path.exists(fichero):
         os.remove(fichero)
