@@ -1,11 +1,10 @@
-<span align="center">
-<h1>
+<h1 align="center">
    <img width="auto" height="35px" src="https://github.com/jokiromero/Centinela/blob/master/centinela/images/ojo_abierto.png"/>
-   <p><font size="15px">Centinela</font></p>
+   <p><font size="18px">Centinela</font></p>
+   <p><font size="2"><i>by Joaquín Romero (c), 2025</i></font></p>
 </h1>
-<p><font size="2"><i>by Joaquín Romero (c), 2025</i></font></p>
-<p><font size="14"><strong>Seguimiento automático de los cambios de ciertos valores en una página de Crowdfunding mediante Web Scrapping</strong></font></p>
-</span>
+<h1 align="center">Seguimiento automático de los cambios de ciertos valores en una página de Crowdfunding mediante Web Scrapping</h1>
+
  
 <hr />
 
@@ -38,13 +37,12 @@ Cuando no se vaya a usar, podrá desactivarse mediante el comando ` .centinela\S
 ~~~
     (.centinela) c:\users\mi_usuario\>  pip install miRutaRepo/Centinela/dist/<nombre_fichero.tar.gz>
 ~~~
-d- Opción 2: Descargar una copia del fichero del paquete directamente desde GitHub.com y luego instalarlo mediante:
+- Opción 2: Descargar una copia del fichero del paquete directamente desde GitHub.com y luego instalarlo mediante:
 ~~~
-    (.centinela) c:\users\mi_usuario\>  curl --remote-name 
-    
-    (.centinela) c:\users\mi_usuario\>  pip install miRutaRepo/Centinela/dist/<nombre_fichero.tar.gz>
+    (.centinela) c:\users\mi_usuario\>  curl --remote-name https://raw.githubusercontent.com/jokiromero/Centinela/master/dist/centinela-<version>.tar.gz" 
+    (.centinela) c:\users\mi_usuario\>  pip install miRutaRepo/Centinela/dist/centinela-<version>.tar.gz>
 ~~~
-
+(donde `<version>` debe ser sustituido por los dígitos que identifican la versión de que se trate. Por ejemplo `centinela-1.3`)
 
 
 
