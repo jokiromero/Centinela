@@ -110,16 +110,16 @@ class DatosPersistentes:
 
         def _formato1(lec: Lectura) -> str:
             fmt = ""
-            fmt += f"{cols["d"]:18} = {lec.dias:8d}\n"
-            fmt += f"{cols["a"]:18} = {lec.aportaciones:8d}\n"
-            fmt += f"{cols["o"]:18} = {lec.objetivo:11,.2f} €\n"
-            fmt += f"{cols["t"]:18} = {lec.total:11,.2f} €"
+            fmt += f"{cols['d']:18} = {lec.dias:8d}\n"
+            fmt += f"{cols['a']:18} = {lec.aportaciones:8d}\n"
+            fmt += f"{cols['o']:18} = {lec.objetivo:11,.2f} €\n"
+            fmt += f"{cols['t']:18} = {lec.total:11,.2f} €"
             return fmt
 
         def _formato2(lec: Lectura) -> str:
             fmt = ""
-            fmt += f"{lec.dias} {cols["d"]}.  {cols["o"][:3]}: {lec.objetivo:7,.0f} €\n"
-            fmt += f"{lec.aportaciones} {cols["a"][:5]}. {cols["t"]}: {lec.total:7,.0f} €\n"
+            fmt += f"{lec.dias} {cols['d']}.  {cols["o"][:3]}: {lec.objetivo:7,.0f} €\n"
+            fmt += f"{lec.aportaciones} {cols['a'][:5]}. {cols['t']}: {lec.total:7,.0f} €\n"
             fmt += f"({(lec.total / lec.aportaciones):,.0f} € promedio por aport.)"
             return fmt
 
