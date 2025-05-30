@@ -1,8 +1,8 @@
 <h1 align="center">
    <img width="auto" height="35px" src="https://github.com/jokiromero/Centinela/blob/master/centinela/images/ojo_abierto.png"/>
    <p><font size="18px">Centinela</font></p>
-   <p><font size="2"><i>by Joaquín Romero (c), 2025</i></font></p>
 </h1>
+<p align="center"><font size="2"><i>by Joaquín Romero (c), 2025</i></font></p>
 <h1 align="center">Seguimiento automático de los cambios de ciertos valores en una página de Crowdfunding mediante Web Scrapping</h1>
 
  
