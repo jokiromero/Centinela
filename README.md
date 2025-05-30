@@ -55,8 +55,8 @@ Nótese que siempre que esté activado el entorno virtual donde hayamos instalad
 ## 🔧 Instalación sucesiva (actualizaciones):
 
 Los pasos que hay que dar son los siguientes:
-1. *Activar el entorno virtual*
-2. *Desistalar la versión previa*
+1. *Activar el entorno virtual*:
+2. *Desistalar la versión previa*:
 
 ~~~
     (.centinela) c:\users\mi_usuario\>  pip uninstall centinela 
