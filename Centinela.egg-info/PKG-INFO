@@ -1,15 +1,15 @@
 Metadata-Version: 2.4
 Name: Centinela
-Version: 1.0.0
+Version: 1.3
 Summary: Seguimiento por Web Scrapping del importe recaudado en un Crowdfunding de Verkami
+Home-page: https://github.com/jokiromero/Centinela
 Author: Joaquín Romero
 Author-email: joki.romero@gmail.com
+License: GPL-3.0-or-later
 Classifier: Development Status :: 3 - Alpha
 Classifier: Intended Audience :: Education
 Classifier: Intended Audience :: End Users/Desktop
 Classifier: Intended Audience :: Developers
-Classifier: License :: OSI Approved :: GNU General Public License (GPL)
-Classifier: License :: Free for non-commercial use
 Classifier: Operating System :: Microsoft :: Windows
 Classifier: Topic :: Desktop Environment
 Classifier: Programming Language :: Python
@@ -27,11 +27,14 @@ Requires-Dist: pandas~=2.2.3
 Requires-Dist: setuptools~=80.8.0
 Requires-Dist: openpyxl~=3.1.5
 Requires-Dist: dataclasses~=0.6
+Requires-Dist: num2words~=0.5.14
 Dynamic: author
 Dynamic: author-email
 Dynamic: classifier
 Dynamic: description
 Dynamic: description-content-type
+Dynamic: home-page
+Dynamic: license
 Dynamic: requires-dist
 Dynamic: requires-python
 Dynamic: summary
@@ -42,12 +45,12 @@ by JoaquÃ­n Romero (c), 2025
   
 ## DescripciÃ³n general  
   
-AplicaciÃ³n de escritorio para Windows que se aloja en la bandeja del sistema y se ejecuta en segundo plano
-Realiza Web Scrapping cada n minutos de un intervalo prefijado por el usuario y extrae informaciÃ³n cuantitavia de una pÃ¡gina Web de Crowdfunding (Verkami).
+AplicaciÃ³n de escritorio para Windows que se aloja en la bandeja del sistema y se ejecuta en segundo plano.
+Realiza Web Scrapping cada 'n' minutos de un intervalo prefijado por el usuario y extrae informaciÃ³n cuantitativa de una pÃ¡gina Web de Crowdfunding (Verkami).
   
 ## InstalaciÃ³n  
 1. *Instalar Python*: Asegurarse de que Python estÃ© instalado en el PC. Puedes descargar e instalar Python desde el sitio web oficial de Python.
-2. *Descomprimir ficheros del proyecto*: Esto incluye todos los ficheros y estrcutura de carpetas necesaria para la ejecuciÃ³n de la aplicaciÃ³n.
+2. *Descomprimir ficheros del proyecto*: Esto incluye todos los ficheros y estructura de carpetas necesaria para la ejecuciÃ³n de la aplicaciÃ³n.
 3. *Crear un entorno virtual*: En la carpeta del proyecto descomprimido, crear un nuevo entorno virtual ejecutando el comando:
 ~~~
     c:\mi_usuario\Centinela\>  python -m venv .venv

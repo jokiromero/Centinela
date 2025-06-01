@@ -1,8 +1,11 @@
 include requirements.txt
 include README.md
 include MANIFEST.in
+include centinela.cmd
+
 recursive-include images *
 recursive-include documents *
-recursive-include app *
-recursive-exclude notes *
+recursive-include dist *
+recursive-include centinela *
+recursive-include _tools *
 
