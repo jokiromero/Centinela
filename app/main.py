@@ -104,7 +104,7 @@ def mostrar_datos():
         )
         if voz_activada:
             numero = num2words(number=data.lectura_nueva.total, lang="es")
-            msg = f"Atención: se ha alcanzado un total de {numero} euros"
+            msg = f"Se ha alcanzado un total de {numero} euros"
             hilo_hablar = threading.Thread(
                 target=hablar,
                 kwargs={"msg": msg, "error": False, "beep": False}
