@@ -2,7 +2,6 @@ import os
 import pathlib
 
 from enum import IntEnum
-
 from PIL import Image
 
 
@@ -32,9 +31,9 @@ LOGO_INACTIVO = Image.open(os.path.join(carpeta, r"images\ojo_cerrado.png"))
 ICONO_ACTIVO_FICH = os.path.join(carpeta, r"images\ojo_abierto.ico")
 
 INTERVALOS = {
-    "Cada 1 minutos": 1,
-    "Cada 2 minutos": 2,
-    "Cada 3 minutos": 3,
-    "Cada 4 minutos": 4,
     "Cada 5 minutos": 5,
+    "Cada 15 minutos": 15,
+    "Cada 20 minutos": 20,
+    "Cada 45 minutos": 45,
+    "Cada hora": 60,
 }

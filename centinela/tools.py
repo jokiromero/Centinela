@@ -38,6 +38,7 @@ def mostrar_notificacion(
     if msg_hablado:
         hilo_hablar = Thread(target=hablar, kwargs={"msg": msg_hablado})
         hilo_hablar.start()
+        print(f"Mensaje hablado: {msg_hablado}")
 
 
 def hablar(msg: str):

@@ -83,8 +83,9 @@ def mostrar_datos(es_una_repeticion=False):
             sonido=melodia
         )
 
-    print(f"mostrar_datos() -->> {data.lectura_nueva.fecha} ... {config.tupla_intervalo_activo[0]=}")
-    print(f"mostrar_datos() -->> {data.get_salida_tabulada(0)}\n-----------------------------------------------------------------\n")
+    print(f"mostrar_datos() -->> {data.lectura_nueva.fecha=} ... {config.tupla_intervalo_activo[0]=}")
+    print(f"mostrar_datos() -->> \n{data.get_salida_tabulada(0)}\n"
+          f"-----------------------------------------------------------------\n")
 
 
 def bucle_principal():
