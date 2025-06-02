@@ -1,12 +1,14 @@
 import os
+import winotify
+import pandas as pd
+
 from copy import copy
 from dataclasses import dataclass, asdict
 from datetime import datetime
 from typing import Literal
+from num2words import num2words
 
-import pandas as pd
-
-from centinela import tools
+from centinela import tools, config
 
 cols = {
     "f": "Fecha",
@@ -75,6 +77,11 @@ class DatosPersistentes:
 
     @lectura_nueva.setter
     def lectura_nueva(self, datos_nuevos: Lectura):
+        # Antes sustituir la lectura nueva, saca una copia como lectura anterior
+        print(f"_guardar_lectura() copia la lectura nueva como anterior: {self.lectura_nueva}")
+        self._lectura_anterior = copy(self.lectura_nueva)
+        print(f"_guardar_lectura() copia = {self.lectura_anterior}")
+        # Y ahora puede ya machacarla con el nuevo valor recién leído
         self._lectura_nueva = copy(datos_nuevos)
 
         if not self._lectura_nueva.fecha:
@@ -92,12 +99,8 @@ class DatosPersistentes:
             if self._fichero:
                 tools.exportar_excel(fich=self._fichero, data={"Hoja1": self._df})
 
-            print(f"_guardar_lectura() conserva una copia de la lectura nueva como anterior: {self.lectura_nueva}")
-            self._lectura_anterior = copy(self.lectura_nueva)
-            print(f"_guardar_lectrua() copia = {self.lectura_anterior}")
-
     @property
-    def  lectura_anterior(self) -> Lectura | None:
+    def lectura_anterior(self) -> Lectura | None:
         if self._lectura_anterior:
             return self._lectura_anterior
         else:
@@ -133,3 +136,29 @@ class DatosPersistentes:
             salida = _formato2(self.lectura_nueva)
 
         return salida
+
+    def mostrar_datos(self, es_una_repeticion=False):
+        if ((config.tipo_notificaciones_activo == config.Notificaciones.TODOS_LOS_INTERVALOS or
+             (config.tipo_notificaciones_activo == config.Notificaciones.SOLO_CAMBIOS
+              and self.datos_cambiados)) or es_una_repeticion):
+            if self.datos_cambiados:
+                titulo2 = "... ¡NUEVOS DATOS!"
+                melodia = winotify.audio.LoopingAlarm4
+            else:
+                titulo2 = "... (sin cambios)"
+                melodia = winotify.audio.LoopingCall2
+
+            numero = num2words(number=self.lectura_nueva.total, lang="es")
+            msg_voz = f"Atención: se ha alcanzado un total de {numero} euros"
+            print(f"mostrar_datos() >> {config.voz_activada=}")
+            tools.mostrar_notificacion(
+                titulo=self.lectura_nueva.fecha + titulo2,
+                msg=f"{self.get_salida_tabulada(2)}",
+                msg_hablado=msg_voz if config.voz_activada else "",
+                sonido=melodia
+            )
+
+        print(f"mostrar_datos() -->> {self.lectura_nueva.fecha=} ... {config.tupla_intervalo_activo[0]=}")
+        print(f"mostrar_datos() -->> \n{self.get_salida_tabulada(0)}\n"
+              f"-----------------------------------------------------------------\n")
+

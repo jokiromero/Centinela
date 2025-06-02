@@ -6,15 +6,9 @@ from PIL import ImageFile
 from num2words import num2words
 from pystray import Icon, Menu, MenuItem
 
-from centinela import config
-from centinela import tools
-from centinela.datos_persistentes import DatosPersistentes
+from centinela import tools, config
 from centinela.scrapper_verkami import ScrapperVerkami
-
-
-# # tupla_intervalo_activo = list(intervalos.items())[intervalos.__len__() - 1]
-# tupla_intervalo_activo = ("Cada 1 minutos", 1)
-# tipo_notificaciones_activo = config.Notificaciones.TODOS_LOS_INTERVALOS
+from centinela.datos_persistentes import DatosPersistentes
 
 
 def get_logo() -> ImageFile:
@@ -55,44 +49,18 @@ def get_menu() -> Menu:
         MenuItem(text="Activada", action=accion_activar_app, checked=lambda item: config.app_activada),
         MenuItem(text="Intervalos", action=submenu_intervalos),
         MenuItem(text="Notificaciones", action=submenu_notificar),
-        MenuItem(text="Mostrar última notificación", action=accion_ultimo_valor),
+        MenuItem(text="Mostrar última notificación", action=repetir_mostrar),
         Menu.SEPARATOR,
         MenuItem(text="Salir", action=accion_salir),
     ])
     return menu
 
 
-def mostrar_datos(es_una_repeticion=False):
-    if ((config.tipo_notificaciones_activo == config.Notificaciones.TODOS_LOS_INTERVALOS or
-         (config.tipo_notificaciones_activo == config.Notificaciones.SOLO_CAMBIOS
-          and data.datos_cambiados)) or es_una_repeticion):
-        if data.datos_cambiados:
-            titulo2 = "... ¡NUEVOS DATOS!"
-            melodia = winotify.audio.LoopingAlarm4
-        else:
-            titulo2 = "... (sin cambios)"
-            melodia = winotify.audio.LoopingCall2
-
-        numero = num2words(number=data.lectura_nueva.total, lang="es")
-        msg_voz = f"Atención: se ha alcanzado un total de {numero} euros"
-        print(f"{config.voz_activada=}")
-        tools.mostrar_notificacion(
-            titulo=scrap.datos_web.fecha + titulo2,
-            msg=f"{data.get_salida_tabulada(2)}",
-            msg_hablado=msg_voz if config.voz_activada else "",
-            sonido=melodia
-        )
-
-    print(f"mostrar_datos() -->> {data.lectura_nueva.fecha=} ... {config.tupla_intervalo_activo[0]=}")
-    print(f"mostrar_datos() -->> \n{data.get_salida_tabulada(0)}\n"
-          f"-----------------------------------------------------------------\n")
-
-
 def bucle_principal():
     while True:
         if config.app_activada:
             data.lectura_nueva = scrap.leer_datos()
-            mostrar_datos()
+            data.mostrar_datos()
             intervalo = 60 * config.tupla_intervalo_activo[1]
             time.sleep(intervalo)
 
@@ -117,7 +85,7 @@ def accion_fijar_notificaciones(icon, valor=0):
 
 def accion_activar_voz(icon):
     config.voz_activada = not config.voz_activada
-    print(f"{config.voz_activada=}")
+    print(f"Menú activar/desactivar voz >> {config.voz_activada=}")
     icon.icon = get_logo()
     icon.menu = get_menu()
     icon.update_menu()
@@ -130,8 +98,8 @@ def accion_activar_app(icon):
     icon.update_menu()
 
 
-def accion_ultimo_valor(icon):
-    mostrar_datos(es_una_repeticion=True)
+def repetir_mostrar(icon):
+    data.mostrar_datos(es_una_repeticion=True)
 
 
 def accion_salir(icon):

@@ -1,15 +1,14 @@
 import os
-from pathlib import Path
 import time
-from os import PathLike
-from threading import Thread, Lock
-
 import pyglet
 import winotify
-
 import openpyxl
 import openpyxl.utils
 import pandas as pd
+
+from os import PathLike
+from pathlib import Path
+from threading import Thread, Lock
 from gtts import gTTS
 from openpyxl.styles import Alignment, Font, PatternFill
 

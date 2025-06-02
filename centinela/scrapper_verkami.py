@@ -1,6 +1,6 @@
-from datetime import datetime
-
 import requests
+
+from datetime import datetime
 from bs4 import BeautifulSoup
 
 from centinela.datos_persistentes import Lectura
@@ -13,7 +13,6 @@ class ScrapperVerkami:
 
     def __init__(self):
         self._url = "https://www.verkami.com/projects/40960-isphanya"
-        self._datos_web = Lectura()
         self._timestamp = None
 
     def leer_datos(self) -> Lectura | None:
@@ -61,7 +60,7 @@ class ScrapperVerkami:
         valor_campo2 = int(counter_values[1].text.strip().replace('.', ''))
         importe_recaudado = float(counter_values[2].text.strip().replace('€', '').replace('.', '').replace(',', '.'))
 
-        self._datos_web = Lectura(
+        datos_web = Lectura(
             fecha=self._timestamp,
             dias=valor_campo1,
             aportaciones=valor_campo2,
@@ -69,8 +68,4 @@ class ScrapperVerkami:
             total=importe_recaudado,
         )
 
-        return self.datos_web
-
-    @property
-    def datos_web(self) -> Lectura:
-        return self._datos_web
+        return datos_web
