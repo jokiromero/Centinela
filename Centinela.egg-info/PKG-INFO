@@ -39,46 +39,76 @@ Dynamic: requires-dist
 Dynamic: requires-python
 Dynamic: summary
 
-# **CENTINELA**
-by JoaquÃ­n Romero (c), 2025  
-## Seguimiento automÃ¡tico de los cambios de ciertos valores en una pÃ¡gina de Crowdfunding mediante Web Scrapping  
-  
-## DescripciÃ³n general  
-  
+<h1 align="center">
+   <img width="auto" height="35px" src="https://github.com/jokiromero/Centinela/blob/master/centinela/images/ojo_abierto.png"/>
+   <p><font size="18px">Centinela</font></p>
+</h1>
+<p align="center"><font size="2"><i>by JoaquÃ­n Romero (c), 2025</i></font></p>
+<h1 align="center">Seguimiento automÃ¡tico de los cambios de ciertos valores en una pÃ¡gina de Crowdfunding mediante Web Scrapping</h1>
+
+ 
+<hr />
+
+## âœ¨ DescripciÃ³n general  
 AplicaciÃ³n de escritorio para Windows que se aloja en la bandeja del sistema y se ejecuta en segundo plano.
 Realiza Web Scrapping cada 'n' minutos de un intervalo prefijado por el usuario y extrae informaciÃ³n cuantitativa de una pÃ¡gina Web de Crowdfunding (Verkami).
   
-## InstalaciÃ³n  
-1. *Instalar Python*: Asegurarse de que Python estÃ© instalado en el PC. Puedes descargar e instalar Python desde el sitio web oficial de Python.
-2. *Descomprimir ficheros del proyecto*: Esto incluye todos los ficheros y estructura de carpetas necesaria para la ejecuciÃ³n de la aplicaciÃ³n.
-3. *Crear un entorno virtual*: En la carpeta del proyecto descomprimido, crear un nuevo entorno virtual ejecutando el comando:
+##  ðŸ§© Primera instalaciÃ³n  
+### *1) Instalar Python*: 
+AsegÃºrate de que Python estÃ© instalado en el PC. Puedes descargar e instalar Python desde el sitio web oficial de Python.
+
+### *2) Crear un entorno virtual*: 
+Este entorno virtual serÃ¡ donde quedarÃ¡ instalado el paquete de la aplicaciÃ³n y todas sus dependencias de forma que podrÃ¡ ejecutarse de manera aislada del resto de aplicaciones y paquetes Python que tengamos instalados en nuestro PC. Puede estar ubicado en cualquier ruta, pero recomendamos en 'c:\users\mi_suario\.centinela', siendo '.centinela' el nombre de dicho entorno. Para crear el entorno virtual usaremos el comando
 ~~~
-    c:\mi_usuario\Centinela\>  python -m venv .venv
+   c:\users\mi_usuario\>  python -m venv .centinela
 ~~~
 
-
-4. *Activar el entorno virtual*:
+### *3) Activar el entorno virtual*:
     - En Windows se hace mediante el siguiente comando:
 ~~~
-    c:\mi_usuario\Centinela\>  .venv\Scripts\activate 
+    c:\users\mi_usuario\>  .centinela\Scripts\activate 
 ~~~
 
 Tras la activaciÃ³n, el prompt del sistema cambiarÃ¡ mostrando el nombre del entorno virtual entre parÃ©ntesis '(.venv)' delante del prompt:
 ~~~
-    (.venv) c:\mi_usuario\Centinela\>  _ 
+    (.centinela) c:\users\mi_usuario\>  _ 
 ~~~
 
-5. *Instalar dependencias*: Ejecutar el siguiente comando instalarÃ¡ en el entorno virtual de la aplicaciÃ³n todos los mÃ³dulos y librerÃ­as que Ã©sta necesita:
-~~~
-    (.venv) c:\mi_usuario\Centinela\>  pip install -r requirements.txt
-~~~
+Cuando no se vaya a usar, podrÃ¡ desactivarse mediante el comando ` .centinela\Scripts\deactivate `
 
+### *4) Instalar el paquete del proyecto*: 
+Este paquete consiste en un fichero denominado `centinela-<version>.tar.gz` (comprimido ZIP/WinRAR) que contiene todos los ficheros que forman el paquete de aplicaciÃ³n y las librerÃ­as necesarias para su funcionamiento. Este paquete estÃ¡ disponible en la carpeta 'dist' del repositorio de Ceninela en GitHub.com. Para instalar este paquete tiene dos opciones: 
+- _OpciÃ³n 1_: Partir de una copia del fichero del paquete disponible en su repositorio clonado local mediante: 
+~~~
+    (.centinela) c:\users\mi_usuario\>  pip install miRutaRepo/Centinela/dist/<nombre_fichero.tar.gz>
+~~~
+- OpciÃ³n 2: Descargar una copia del fichero del paquete directamente desde GitHub.com y luego instalarlo mediante:
+~~~
+    (.centinela) c:\users\mi_usuario\>  curl --remote-name https://raw.githubusercontent.com/jokiromero/Centinela/master/dist/centinela-<version>.tar.gz" 
+    (.centinela) c:\users\mi_usuario\>  pip install miRutaRepo/Centinela/dist/centinela-<version>.tar.gz>
+~~~
+(donde `<version>` debe ser sustituido por los dÃ­gitos que identifican la versiÃ³n de que se trate. Por ejemplo `centinela-1.3`)
 
-## EjecuciÃ³n  
+## ðŸ“œ EjecuciÃ³n  
 Ejecutar en la lÃ­nea de comandos:
 ~~~
-    (.venv) c:\mi_usuario\Centinela\>  python -m app.main
+    (.centinela) c:\users\mi_usuario\>  python -m centinela.main
 ~~~
 
+NÃ³tese que siempre que estÃ© activado el entorno virtual donde hayamos instalado el paquete, no importarÃ¡ en quÃ© directorio nos eoncontremos ya que la aplicaciÃ³n se ejecutarÃ¡ dentro del entorno virtual y Ã©sta no tienen ninguna dependencia fuera del mismo (no realiza ininguna referencia a una carpeta que no forme parte de su Ã¡rbol de carpetas)
+
+## ðŸ”§ InstalaciÃ³n sucesiva (actualizaciones):
+
+Los pasos que hay que dar son los siguientes:
+### *1) Activar el entorno virtual*
+### *2) Desinstalar la versiÃ³n previa*
+~~~
+    (.centinela) c:\users\mi_usuario\>  pip uninstall centinela 
+~~~
+En algunos casos, este paso no es necesario y la propia reinstalaciÃ³n del nuevo paquete sustituye al anterior.
+
+### *3) Instalar la nueva versiÃ³n*
+
+Repetir el procedimiento ya explicado segÃºn usemos un paquete local o tengamos que descargar el paquete desde GitHub.com
 
 

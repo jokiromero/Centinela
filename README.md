@@ -69,12 +69,5 @@ En algunos casos, este paso no es necesario y la propia reinstalación del nuevo
 ### *3) Instalar la nueva versión*
 
 Repetir el procedimiento ya explicado según usemos un paquete local o tengamos que descargar el paquete desde GitHub.com
- 
 
-
-
-
-
-
-🤝🌟💻
 
