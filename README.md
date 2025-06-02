@@ -13,13 +13,16 @@ Aplicación de escritorio para Windows que se aloja en la bandeja del sistema y 
 Realiza Web Scrapping cada 'n' minutos de un intervalo prefijado por el usuario y extrae información cuantitativa de una página Web de Crowdfunding (Verkami).
   
 ##  🧩 Primera instalación  
-1. *Instalar Python*: Asegurarse de que Python esté instalado en el PC. Puedes descargar e instalar Python desde el sitio web oficial de Python.
-2. *Crear un entorno virtual*: Este entorno virtual será donde instalaremos el paquete de la aplicación y todas sus dependencias de forma que podrá ejecutarse de manera aislada del resto de aplicaciones y paquetes Python que tengamos instalados en nuestro PC. Puede estar ubicado en cualquier ruta, pero recomendamos en 'c:\users\mi_suario\.centinela', siendo '.centinela' el nombre de dicho entorno. Para crear el entorno virtual usaremos el comando: 
+### *1) Instalar Python*: 
+Asegúrate de que Python esté instalado en el PC. Puedes descargar e instalar Python desde el sitio web oficial de Python.
+
+### *2) Crear un entorno virtual*: 
+Este entorno virtual será donde quedará instalado el paquete de la aplicación y todas sus dependencias de forma que podrá ejecutarse de manera aislada del resto de aplicaciones y paquetes Python que tengamos instalados en nuestro PC. Puede estar ubicado en cualquier ruta, pero recomendamos en 'c:\users\mi_suario\.centinela', siendo '.centinela' el nombre de dicho entorno. Para crear el entorno virtual usaremos el comando
 ~~~
    c:\users\mi_usuario\>  python -m venv .centinela
 ~~~
 
-3. *Activar el entorno virtual*:
+### *3) Activar el entorno virtual*:
     - En Windows se hace mediante el siguiente comando:
 ~~~
     c:\users\mi_usuario\>  .centinela\Scripts\activate 
@@ -32,7 +35,8 @@ Tras la activación, el prompt del sistema cambiará mostrando el nombre del ent
 
 Cuando no se vaya a usar, podrá desactivarse mediante el comando ` .centinela\Scripts\deactivate `
 
-4*Instalar el paquete del proyecto*: Este paquete consiste en un fichero denominado `centinela-<version>.tar.gz` (comprimido ZIP/WinRAR) que contiene todos los ficheros que forman el paquete de aplicación y las librerías necesarias para su funcionamiento. Este paquete está disponible en la carpeta 'dist' del repositorio de Ceninela en GitHub.com. Para instalar este paquete tiene dos opciones: 
+### *4) Instalar el paquete del proyecto*: 
+Este paquete consiste en un fichero denominado `centinela-<version>.tar.gz` (comprimido ZIP/WinRAR) que contiene todos los ficheros que forman el paquete de aplicación y las librerías necesarias para su funcionamiento. Este paquete está disponible en la carpeta 'dist' del repositorio de Ceninela en GitHub.com. Para instalar este paquete tiene dos opciones: 
 - _Opción 1_: Partir de una copia del fichero del paquete disponible en su repositorio clonado local mediante: 
 ~~~
     (.centinela) c:\users\mi_usuario\>  pip install miRutaRepo/Centinela/dist/<nombre_fichero.tar.gz>
@@ -55,15 +59,14 @@ Nótese que siempre que esté activado el entorno virtual donde hayamos instalad
 ## 🔧 Instalación sucesiva (actualizaciones):
 
 Los pasos que hay que dar son los siguientes:
-1. *Activar el entorno virtual*
-2. *Desistalar la versión previa*
-
+### *1) Activar el entorno virtual*
+### *2) Desinstalar la versión previa*
 ~~~
     (.centinela) c:\users\mi_usuario\>  pip uninstall centinela 
 ~~~
 En algunos casos, este paso no es necesario y la propia reinstalación del nuevo paquete sustituye al anterior.
 
-4. *Instalar la nueva versión*:
+### *3) Instalar la nueva versión*
 
 Repetir el procedimiento ya explicado según usemos un paquete local o tengamos que descargar el paquete desde GitHub.com
  
