@@ -37,3 +37,4 @@ LOGO_ACTIVO = Image.open(os.path.join(carpeta, r"images\ojo_abierto.png"))
 LOGO_INACTIVO = Image.open(os.path.join(carpeta, r"images\ojo_cerrado.png"))
 ICONO_ACTIVO_FICH = os.path.join(carpeta, r"images\ojo_abierto.ico")
 
+TOKEN_TELEGRAM = "5822496306:AAFqwAXkBo_QTLhSdwi5OjCoG23fpxn2Ot0"
