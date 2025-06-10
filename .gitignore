@@ -1,7 +1,9 @@
-/notes/
-/notes/NOTAS.md
-/Datos_Centinela.xlsx
-/.venv/
-/centinela/documents/
-/dist/
-/centinela/images/
+__pycache__/
+.idea/
+*.pyc
+notes/
+notes/NOTAS.md
+centinela/Datos_Centinela.xlsx
+.venv/
+venv/
+dist/
