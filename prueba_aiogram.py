@@ -64,10 +64,10 @@ class BotTelegram:
         if message.chat.id not in list(self._suscriptores):
             self._suscriptores[message.chat.id] = message.chat.full_name
             msg = (f"Muchas gracias, '{message.chat.full_name}' (id={message.chat.id}) "
-                   f"por suscribirte a las notificaciones de Centinela.\n"
+                   f"por suscribirte a las notificaciones de Centinela.\n\n"
                    f"A partir de ahora recibirás actualizaciones directamente en este "
-                   f"chat cada vez que éstas ocurran.\n"
-                   f"💞💞💞 ¡¡Gracias por usar Centinela!! ")
+                   f"chat cada vez que éstas ocurran.\n\n"
+                   f"💚💚💚 ¡¡Gracias por usar Centinela!! ")
         else:
             nombre = self._suscriptores[message.chat.id]
             msg = f"{message.chat.full_name}, ya estás suscrito a las notificaciones de Centinela."
