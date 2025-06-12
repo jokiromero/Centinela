@@ -69,7 +69,7 @@ def exportar_excel(
         ancho_columnas: dict = None
 ) -> None:
     """
-        Facilita la exportanción a Excel de Pandas.DataFrames
+        Facilita la exportanción a Excel de Pandas. DataFrames
             fich = Nombre completo del fichero Excel de salida
             data = Es un diccionario cuyas claves son los nombres de ls hojas
                       del Excel a crear y cuyos datos son objetos DataFrame que van
@@ -77,8 +77,8 @@ def exportar_excel(
             index_excel = bool - Si es True el índice se exportará al Excel.
                       Por defecto es False
             fmode = 'W' para sobreescribir o "a" para añadir al fichero existente
-                     pero sobreescribiendo las pestañas pre-existentes
-            ancho_columnas = opcional, diccionario con los anchos deseados para las
+                     sobreescribiendo las pestañas preexistentes
+            ancho_columnas = opcional, diccionario con los anchos deseados para
                              las columnas sobre las que no se prefiera el ancho
                              automático (autofit)
         """

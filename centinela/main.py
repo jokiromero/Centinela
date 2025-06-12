@@ -3,11 +3,10 @@ import time
 
 import winotify.audio
 from PIL import ImageFile
-from num2words import num2words
 from pystray import Icon, Menu, MenuItem
 
 from centinela import tools, config
-from centinela.scrapper_verkami import ScrapperVerkami
+from scrappers.scrapper_verkami import ScrapperVerkami
 from centinela.datos_persistentes import DatosPersistentes
 
 
@@ -65,6 +64,7 @@ def bucle_principal():
             time.sleep(intervalo)
 
 
+# noinspection SpellCheckingInspection
 def accion_fijar_intervalo(icon, texto_intervalo):
     # todo: verificar que 'texto_intervalo' existe (es una clave) en
     #   el diccionario 'intervalos' para evitar que este función sea llamada
@@ -77,12 +77,14 @@ def accion_fijar_intervalo(icon, texto_intervalo):
     tools.mostrar_notificacion(msg=msg, sonido=winotify.audio.LoopingCall)
 
 
+# noinspection SpellCheckingInspection
 def accion_fijar_notificaciones(icon, valor=0):
     config.tipo_notificaciones_activo = valor if valor in (0, 1) else 0
     icon.menu = get_menu()
     icon.update_menu()
 
 
+# noinspection SpellCheckingInspection
 def accion_activar_voz(icon):
     config.voz_activada = not config.voz_activada
     print(f"Menú activar/desactivar voz >> {config.voz_activada=}")
@@ -91,6 +93,7 @@ def accion_activar_voz(icon):
     icon.update_menu()
 
 
+# noinspection SpellCheckingInspection
 def accion_activar_app(icon):
     config.app_activada = not config.app_activada
     icon.icon = get_logo()
@@ -102,6 +105,7 @@ def repetir_mostrar(icon):
     data.mostrar_datos(es_una_repeticion=True)
 
 
+# noinspection SpellCheckingInspection
 def accion_salir(icon):
     icon.stop()
 
@@ -109,7 +113,8 @@ def accion_salir(icon):
 if __name__ == '__main__':
     centinela_system_tray = Icon(config.APP_NOMBRE, get_logo(), menu=get_menu())
 
-    scrap = ScrapperVerkami()
+    # scrap = ScrapperVerkami(url=config.URL_ISPHANYA)
+    scrap = ScrapperVerkami(url=config.URL_MORTADELO, nombre="Proyecto Mortadelo")
     data = DatosPersistentes(config.FICHERO_EXCEL_DATOS)
 
     # Iniciamos la tarea de centinela en un hilo en segundo plano

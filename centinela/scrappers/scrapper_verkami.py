@@ -1,24 +1,25 @@
 import requests
 
-from datetime import datetime
 from bs4 import BeautifulSoup
+from PIL.Image import Image
 
 from centinela.datos_persistentes import Lectura
+from scrappers.scrapper import Scrapper
 
 
-class ScrapperVerkami:
+class ScrapperVerkami(Scrapper):
     """
-    Clase reponsable de realizar las operaciones de scrapper
+    Clase responsable de realizar las operaciones de scrapper desde
+    la Web de Verkami.  Implementa la interfaz Scrapper que permite
+    diversificar los tipos Webs a leer en cada caso.
     """
-
-    def __init__(self):
-        self._url = "https://www.verkami.com/projects/40960-isphanya"
-        self._timestamp = None
+    def __init__(self, url: str, nombre: str = "",
+                 imagen: Image | None = None):
+        super().__init__(url, nombre, imagen)
 
     def leer_datos(self) -> Lectura | None:
         # Enviar solicitud GET a la página
         response = requests.get(self._url)
-        self._timestamp = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
 
         # Verificar si la solicitud fue exitosa
         if response.status_code != 200:
@@ -37,10 +38,8 @@ class ScrapperVerkami:
             return None
 
         # Extraer los valores y convertirlos a numéricos
-        #   Las etiquetas etiq_campo1 y 2 no se usan más adelante, pero se mantienen porque se podrían utilizar
-        #   para verificar si los valores numéricos se refieren realmente a los campos "días" y "aportaciones" ya que
-        #   se ha observado en otros proyectos VERKAMI que podrían ser otros campos distintos.
-        # todo: utilizar etiq_campo1 y etiq_campo2 para verificiar a qué campos se refieren los valores leídos
+        #   La etiqueta etiq_campo2 no se usa, pero se mantienen porque se podrían utilizar igual que se hace con
+        #   etiq_campo1 para identificar el nombre de las unidades a que se reifere la variabla 'valor_campo1'
         etiq_campo1 = counter_unit[0].text.strip().split()[0].replace('í', 'i').capitalize()
         etiq_campo2 = counter_unit[1].text.strip().capitalize()
         importe_objetivo = float(counter_unit[2].text.strip().replace('€', '')
@@ -58,11 +57,13 @@ class ScrapperVerkami:
         # Extraer los valores y convertirlos a numéricos
         valor_campo1 = int(counter_values[0].text.strip().split()[0])
         valor_campo2 = int(counter_values[1].text.strip().replace('.', ''))
-        importe_recaudado = float(counter_values[2].text.strip().replace('€', '').replace('.', '').replace(',', '.'))
+        importe_recaudado = float(counter_values[2].text.strip().replace('€', '')
+                                  .replace('.', '').replace(',', '.'))
 
         datos_web = Lectura(
-            fecha=self._timestamp,
-            dias=valor_campo1,
+            fecha=Scrapper._get_timestamp(),
+            restante_valor=valor_campo1,
+            restante_unidades=etiq_campo1,
             aportaciones=valor_campo2,
             objetivo=importe_objetivo,
             total=importe_recaudado,

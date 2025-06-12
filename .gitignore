@@ -6,4 +6,5 @@ notes/NOTAS.md
 centinela/Datos_Centinela.xlsx
 .venv/
 venv/
+.env
 dist/

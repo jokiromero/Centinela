@@ -11,8 +11,10 @@ from num2words import num2words
 from centinela import tools, config
 
 cols = {
+    "ti": "Título",
     "f": "Fecha",
-    "d": "Dias",
+    "r": "Restante",
+    "u": "Unidades",
     "a": "Aportaciones",
     "o": "Objetivo",
     "t": "Total"
@@ -21,13 +23,15 @@ cols = {
 
 @dataclass
 class Lectura:
+    titulo: str = ""
     fecha: str = ""
-    dias: int = 0
+    restante_valor: int = 0
+    restante_unidades: str = ""
     aportaciones: int = 0
     objetivo: float = 0
     total: float = 0
 
-    def get_fecha(self) -> datetime:
+    def get_fecha_datetime(self) -> datetime:
         ret = None
         if self.fecha:
             ret = datetime.strptime(self.fecha, "%Y-%m-%d %H:%M:%S")
@@ -55,8 +59,10 @@ class DatosPersistentes:
 
                 self._df.sort_values(by=cols["f"], inplace=True)
                 self._lectura_anterior = Lectura(
+                    titulo=self._df.iloc[-1][cols["ti"]],
                     fecha=self._df.iloc[-1][cols["f"]],
-                    dias=self._df.iloc[-1][cols["d"]],
+                    restante_valor=self._df.iloc[-1][cols["r"]],
+                    restante_unidades=self._df.iloc[-1][cols["u"]],
                     aportaciones=self._df.iloc[-1][cols["a"]],
                     objetivo=self._df.iloc[-1][cols["o"]],
                     total=self._df.iloc[-1][cols["t"]],
@@ -65,8 +71,11 @@ class DatosPersistentes:
     @property
     def datos_cambiados(self) -> bool:
         ret = False
-        if ((self.lectura_anterior.fecha == "" and self.lectura_nueva.fecha != "")
-                or self.lectura_anterior.total != self.lectura_nueva.total):
+        if (
+                self.lectura_anterior.titulo != self.lectura_nueva.titulo
+                or (self.lectura_anterior.fecha == "" and self.lectura_nueva.fecha != "")
+                or self.lectura_anterior.total != self.lectura_nueva.total
+        ):
             ret = True
 
         return ret
@@ -113,7 +122,7 @@ class DatosPersistentes:
 
         def _formato1(lec: Lectura) -> str:
             fmt = ""
-            fmt += f"{cols['d']:18} = {lec.dias:8d}\n"
+            fmt += f"{lec.restante_unidades:18} = {lec.restante_valor:8d}\n"
             fmt += f"{cols['a']:18} = {lec.aportaciones:8d}\n"
             fmt += f"{cols['o']:18} = {lec.objetivo:11,.2f} €\n"
             fmt += f"{cols['t']:18} = {lec.total:11,.2f} €"
@@ -121,7 +130,7 @@ class DatosPersistentes:
 
         def _formato2(lec: Lectura) -> str:
             fmt = ""
-            fmt += f"{lec.dias} {cols['d']}.  {cols['o'][:3]}: {lec.objetivo:7,.0f} €\n"
+            fmt += f"{lec.restante_valor} {lec.restante_unidades}.  {cols['o'][:3]}: {lec.objetivo:7,.0f} €\n"
             fmt += f"{lec.aportaciones} {cols['a'][:5]}. {cols['t']}: {lec.total:7,.0f} €\n"
             fmt += f"({(lec.total / lec.aportaciones):,.0f} € promedio por aport.)"
             return fmt
@@ -158,7 +167,6 @@ class DatosPersistentes:
                 sonido=melodia
             )
 
+        print(f"Página Web: {}")
         print(f"mostrar_datos() -->> {self.lectura_nueva.fecha=} ... {config.tupla_intervalo_activo[0]=}")
-        print(f"mostrar_datos() -->> \n{self.get_salida_tabulada(0)}\n"
-              f"-----------------------------------------------------------------\n")
-
+        print(f"mostrar_datos() -->> \n{self.get_salida_tabulada(0)}\n" + "-" * 86 + "\n")

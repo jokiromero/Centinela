@@ -148,9 +148,9 @@ if __name__ == '__main__':
         # Si quisieras terminar:
         # await bot.detener()
     try:
-        bot = ChatbotTelegram(config.TOKEN_TELEGRAM)
-        asyncio.run(main(bot))
+        mibot = ChatbotTelegram(config.TOKEN_TELEGRAM)
+        asyncio.run(main(mibot))
 
-    except Exception as e:
-        logging.error(f"Error en el bot: {e}")
+    except Exception as ex:
+        logging.error(f"Error en el bot: {ex}")
         raise
