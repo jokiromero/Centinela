@@ -6,7 +6,7 @@ from aiogram.types import Message
 from aiogram import Bot, Dispatcher, types
 from aiogram.types import InlineKeyboardButton, InlineKeyboardMarkup
 from centinela import config
-
+from chatbot import Chatbot
 
 logging.basicConfig(level=logging.DEBUG,
                     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
@@ -14,8 +14,14 @@ logging.basicConfig(level=logging.DEBUG,
 MENSAJE_FIJO = "Opciones disponibles:"
 BANNER_TELEGRAM_ID = "AgACAgQAAxkBAAMTaElcxdIpY-3UdJnFwxc4V_e1KwEAArXFMRvJ5ElSVNaFlbLAShsBAAMCAAN5AAM2BA"
 
-class ChatBot:
+class ChatbotTelegram(Chatbot):
+    def _inicializar(self, token: str) -> None:
+        self._token = token
+        self._inicializado = True
+
     def __init__(self, token: str):
+        super().__init__()
+        self._inicializar(token)
         self._bot = Bot(token)
         self._dp = Dispatcher()
         self._suscriptores = {}
@@ -23,12 +29,8 @@ class ChatBot:
         self._keyboard = InlineKeyboardMarkup(
             inline_keyboard = [[
                 InlineKeyboardButton(text="👍 Suscribirte", callback_data="on"),
-                InlineKeyboardButton(text="👎 Cancelar Suscripción", callback_data="off"),
-            ],
-                [
-                    InlineKeyboardButton(text="Help", callback_data="help"),
-                ]
-            ]
+                InlineKeyboardButton(text="👎 Cancelar Suscripción", callback_data="off")
+            ]]
         )
 
     def _register_handlers(self):
@@ -47,9 +49,6 @@ class ChatBot:
 
         if query.data == "off":
             await self._handle_off(query.message)
-
-        if query.data == "help":
-            await self._handle_help(query.message)
 
     async def _handle_start(self, message: Message):
         """Callbacks para recoger el comando /start"""
@@ -116,13 +115,13 @@ class ChatBot:
         except Exception as e:
             logging.error(f"Error en 'start_polling': {e}")
             raise
-        await self.enviar_mensaje_a_todos("ATENCIÓN: El bot ha sido iniciado...")
-        await self.enviar_mensaje_a_todos("Seleccione una opción:", keyboard=True)
+        await self.enviar_mensaje_a_suscriptores("ATENCIÓN: El bot ha sido iniciado...")
+        await self.enviar_mensaje_a_suscriptores("Seleccione una opción:", keyboard=True)
 
     async def enviar_mensaje_usuario(self, chat_id: int, texto: str):
         await self._bot.send_message(chat_id, texto)
 
-    async def enviar_mensaje_a_todos(self, texto: str, keyboard=False):
+    async def enviar_mensaje_a_suscriptores(self, texto: str, keyboard=False):
         print(f">>> {self._suscriptores=}")
         for chat_id in list(self._suscriptores):
             await self.enviar_mensaje_usuario(chat_id, texto)
@@ -136,21 +135,22 @@ class ChatBot:
 
 
 if __name__ == '__main__':
-    async def main():
-        bot = ChatBot(config.TOKEN_TELEGRAM)
+    async def main(bot: Chatbot):
         task_bot = asyncio.create_task(bot.iniciar())
         # Simulamos lógica adicional
         while True:
             print("App principal ejecutando otras tareas...")
             msg = (f"ATENCIÓN: Está recibiendo este mensaje por estar suscrito a las "
                    f"notificaciones de Centinela\n")
-            await bot.enviar_mensaje_a_todos(msg)
+            await bot.enviar_mensaje_a_suscriptores(msg)
             await asyncio.sleep(10)
 
         # Si quisieras terminar:
         # await bot.detener()
     try:
-        asyncio.run(main())
+        bot = ChatbotTelegram(config.TOKEN_TELEGRAM)
+        asyncio.run(main(bot))
+
     except Exception as e:
         logging.error(f"Error en el bot: {e}")
         raise
