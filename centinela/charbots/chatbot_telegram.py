@@ -6,9 +6,9 @@ from aiogram.types import Message
 from aiogram import Bot, Dispatcher, types
 from aiogram.types import InlineKeyboardButton, InlineKeyboardMarkup
 from centinela import config
-from chatbot import Chatbot
+from centinela.charbots.chatbot import Chatbot
 
-logging.basicConfig(level=logging.DEBUG,
+logging.basicConfig(level=logging.INFO,
                     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
 
 MENSAJE_FIJO = "Opciones disponibles:"
@@ -115,6 +115,7 @@ class ChatbotTelegram(Chatbot):
         except Exception as e:
             logging.error(f"Error en 'start_polling': {e}")
             raise
+        self._iniciado = True
         await self.enviar_mensaje_a_suscriptores("ATENCIÓN: El bot ha sido iniciado...")
         await self.enviar_mensaje_a_suscriptores("Seleccione una opción:", keyboard=True)
 
@@ -132,6 +133,7 @@ class ChatbotTelegram(Chatbot):
         # En aiogram, puedes cerrar el bot manualmente si lo necesitas
         await self._bot.session.close()
         print("Bot detenido.")
+        self._iniciado = False
 
 
 if __name__ == '__main__':
@@ -142,7 +144,7 @@ if __name__ == '__main__':
             print("App principal ejecutando otras tareas...")
             msg = (f"ATENCIÓN: Está recibiendo este mensaje por estar suscrito a las "
                    f"notificaciones de Centinela\n")
-            await bot.enviar_mensaje_a_suscriptores(msg)
+            await bot.enviar_mensaje_a_suscriptores(texto=msg, keyboard=True)
             await asyncio.sleep(10)
 
         # Si quisieras terminar:

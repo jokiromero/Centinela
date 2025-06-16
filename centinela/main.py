@@ -1,3 +1,4 @@
+import asyncio
 import threading
 import time
 
@@ -6,8 +7,9 @@ from PIL import ImageFile
 from pystray import Icon, Menu, MenuItem
 
 from centinela import tools, config
+from charbots.chatbot_telegram import ChatbotTelegram
 from scrappers.scrapper_verkami import ScrapperVerkami
-from centinela.datos_persistentes import DatosPersistentes
+from centinela.datos_persistentes import DatosPersistentes, Lectura
 
 
 def get_logo() -> ImageFile:
@@ -114,8 +116,11 @@ if __name__ == '__main__':
     centinela_system_tray = Icon(config.APP_NOMBRE, get_logo(), menu=get_menu())
 
     # scrap = ScrapperVerkami(url=config.URL_ISPHANYA)
-    scrap = ScrapperVerkami(url=config.URL_MORTADELO, nombre="Proyecto Mortadelo")
-    data = DatosPersistentes(config.FICHERO_EXCEL_DATOS)
+    scrap = ScrapperVerkami(url=config.URL_MORTADELO, titulo="Proyecto Mortadelo")
+
+    # bot = ChatbotTelegram(config.TOKEN_TELEGRAM)
+    # bot.iniciar()
+    # data = DatosPersistentes(config.FICHERO_EXCEL_DATOS, clase_dato=Lectura, bot=bot)
 
     # Iniciamos la tarea de centinela en un hilo en segundo plano
     hilo_principal = threading.Thread(name="hilo_principal", target=bucle_principal)

@@ -10,6 +10,7 @@ def generar_valores_nuevos(val: Lectura) -> Lectura:
     copia.dias -= fake.random_element(
         elements=OrderedDict([(0, 0.8), (1, 0.2)])
     )
+
     aportaciones_nuevas = fake.random_int(min=1, max=5)
     importe_de_aportaciones = fake.random_int(min=30, max=70) * aportaciones_nuevas
     copia.aportaciones += aportaciones_nuevas

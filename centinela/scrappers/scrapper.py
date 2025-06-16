@@ -1,7 +1,6 @@
 from abc import ABCMeta, abstractmethod
 from typing import Any
 from datetime import datetime
-from PIL.Image import Image
 
 
 class Scrapper(metaclass=ABCMeta):
@@ -11,11 +10,9 @@ class Scrapper(metaclass=ABCMeta):
     capaz de leer datos de cierta url y devolverlos mediante el método leer_datos
 
     """
-    def __init__(self, url: str, nombre: str = "",
-                 imagen: Image | None = None):
+    def __init__(self, titulo: str, url: str):
+        self._titulo = titulo
         self._url = url
-        self._nombre = nombre
-        self._imagen = imagen
 
     @abstractmethod
     def leer_datos(self) -> Any:
@@ -26,10 +23,6 @@ class Scrapper(metaclass=ABCMeta):
         return datetime.now().strftime('%Y-%m-%d %H:%M:%S')
 
     @property
-    def nombre(self) -> str:
-        return self._nombre
-
-    @property
-    def imagen(self) -> Image:
-        return self._imagen
+    def titulo(self) -> str:
+        return self._titulo
 

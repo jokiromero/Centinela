@@ -1,23 +1,28 @@
+import dataclasses
 import os
 import winotify
 import pandas as pd
 
+from typing import Type
 from copy import copy
-from dataclasses import dataclass, asdict
+from dataclasses import dataclass, asdict, fields
 from datetime import datetime
 from typing import Literal
 from num2words import num2words
+from pandas.errors import DataError
 
 from centinela import tools, config
+from centinela.charbots.chatbot import Chatbot
+from centinela.charbots.chatbot_telegram import ChatbotTelegram
 
 cols = {
-    "ti": "Título",
-    "f": "Fecha",
-    "r": "Restante",
-    "u": "Unidades",
-    "a": "Aportaciones",
-    "o": "Objetivo",
-    "t": "Total"
+    "ti": "Titulo",         # Un nombre diferenciador para mostrar
+    "f": "Fecha",           # La fecha de la lectura
+    "r": "Restante",        # Valor de tiempo que resta para terminar el Verkami
+    "u": "Unidades",        # Unidades (dias, horas, ...) del tiempo que resta
+    "a": "Aportaciones",    # Número de aportaciones
+    "o": "Objetivo",        # Importe inicial objetivo
+    "t": "Total"            # Total recaudado hasta el momento
 }
 
 
@@ -25,8 +30,8 @@ cols = {
 class Lectura:
     titulo: str = ""
     fecha: str = ""
-    restante_valor: int = 0
-    restante_unidades: str = ""
+    restante: int = 0
+    unidades: str = ""
     aportaciones: int = 0
     objetivo: float = 0
     total: float = 0
@@ -42,8 +47,14 @@ class Lectura:
 
 
 class DatosPersistentes:
-    def __init__(self, nombre_fichero: str | os.PathLike = ""):
+    def __init__(self, nombre_fichero: str | os.PathLike = "",
+                 clase_dato: Type=Lectura,
+                 bot: Chatbot | None=None):
         self._df = None  # DataFrame
+        if not dataclasses.is_dataclass(clase_dato):
+            raise TypeError("Se esperaba una clase 'Dataclass'...")
+
+        self._clase_dato = clase_dato
         self._lectura_anterior: Lectura = Lectura()
         self._lectura_nueva: Lectura = Lectura()
         if nombre_fichero:
@@ -54,6 +65,9 @@ class DatosPersistentes:
         if nombre_fichero:
             if os.path.isfile(self._fichero):
                 self._df = pd.read_excel(self._fichero)
+
+                self._validar_campos()
+
                 if self._df.shape[0] == 0:
                     raise ValueError(f"Fichero vacío '{self._fichero}'")
 
@@ -61,12 +75,43 @@ class DatosPersistentes:
                 self._lectura_anterior = Lectura(
                     titulo=self._df.iloc[-1][cols["ti"]],
                     fecha=self._df.iloc[-1][cols["f"]],
-                    restante_valor=self._df.iloc[-1][cols["r"]],
-                    restante_unidades=self._df.iloc[-1][cols["u"]],
+                    restante=self._df.iloc[-1][cols["r"]],
+                    unidades=self._df.iloc[-1][cols["u"]],
                     aportaciones=self._df.iloc[-1][cols["a"]],
                     objetivo=self._df.iloc[-1][cols["o"]],
                     total=self._df.iloc[-1][cols["t"]],
                 )
+
+        if bot:
+            self._bot = bot
+
+
+    def _validar_campos(self) -> bool:
+        # Campos definidos en la dataclass
+        campos_lectura = {campo.name for campo in fields(self._clase_dato)}
+
+        # Columnas del DataFrame
+        campos_df = set(
+            [col.lower() for col in self._df.columns]
+        )
+
+        # Comparación
+        print(f"{campos_lectura=}")
+        print(f"{campos_df=}")
+
+        campos_faltantes = campos_lectura - campos_df
+        campos_sobrantes = campos_df - campos_lectura
+
+        if campos_faltantes or campos_sobrantes:
+            msg = "❌ Las columnas del Excel no coinciden con los campos que se esperaban...\n"
+            if campos_faltantes:
+                msg += f"🔺 Campos faltantes en el Excel: {sorted(campos_faltantes)}\n"
+            if campos_sobrantes:
+                msg += f"🔻 Columnas sobrantes en el Excel: {sorted(campos_sobrantes)}\n"
+            raise DataError(msg)
+
+        return True
+
 
     @property
     def datos_cambiados(self) -> bool:
@@ -106,7 +151,9 @@ class DatosPersistentes:
 
             # ---------------- GUARDAR FICHERO
             if self._fichero:
-                tools.exportar_excel(fich=self._fichero, data={"Hoja1": self._df})
+                df = self._df.copy()
+                df.columns = [col.capitalize() for col in df.columns]
+                tools.exportar_excel(fich=self._fichero, data={"Hoja1": df})
 
     @property
     def lectura_anterior(self) -> Lectura | None:
@@ -121,16 +168,16 @@ class DatosPersistentes:
             return df.to_string(index=False)
 
         def _formato1(lec: Lectura) -> str:
-            fmt = ""
-            fmt += f"{lec.restante_unidades:18} = {lec.restante_valor:8d}\n"
+            fmt = f"{lec.titulo:28}\n"
+            fmt += f"{lec.unidades:18} = {lec.restante:8d}\n"
             fmt += f"{cols['a']:18} = {lec.aportaciones:8d}\n"
             fmt += f"{cols['o']:18} = {lec.objetivo:11,.2f} €\n"
             fmt += f"{cols['t']:18} = {lec.total:11,.2f} €"
             return fmt
 
         def _formato2(lec: Lectura) -> str:
-            fmt = ""
-            fmt += f"{lec.restante_valor} {lec.restante_unidades}.  {cols['o'][:3]}: {lec.objetivo:7,.0f} €\n"
+            fmt = f"{lec.titulo:28}\n"
+            fmt += f"{lec.restante} {lec.unidades}.  {cols['o'][:3]}: {lec.objetivo:7,.0f} €\n"
             fmt += f"{lec.aportaciones} {cols['a'][:5]}. {cols['t']}: {lec.total:7,.0f} €\n"
             fmt += f"({(lec.total / lec.aportaciones):,.0f} € promedio por aport.)"
             return fmt
@@ -160,13 +207,18 @@ class DatosPersistentes:
             numero = num2words(number=self.lectura_nueva.total, lang="es")
             msg_voz = f"Atención: se ha alcanzado un total de {numero} euros"
             print(f"mostrar_datos() >> {config.voz_activada=}")
+            msg = self.get_salida_tabulada(2)
             tools.mostrar_notificacion(
                 titulo=self.lectura_nueva.fecha + titulo2,
-                msg=f"{self.get_salida_tabulada(2)}",
+                msg=msg,
                 msg_hablado=msg_voz if config.voz_activada else "",
                 sonido=melodia
             )
+            print(f"{self._bot=}")
+            if self._bot:
+                print(f"{self._bot.esta_iniciado=}")
+                if self._bot.esta_iniciado:
+                    self._bot.enviar_mensaje_a_suscriptores(texto=msg, keyboard=True)
 
-        print(f"Página Web: {}")
-        print(f"mostrar_datos() -->> {self.lectura_nueva.fecha=} ... {config.tupla_intervalo_activo[0]=}")
-        print(f"mostrar_datos() -->> \n{self.get_salida_tabulada(0)}\n" + "-" * 86 + "\n")
+        print(f"Lectura de datos desde: {self.lectura_nueva.titulo}  -->>  {self.lectura_nueva.fecha}  ({config.tupla_intervalo_activo[0]})")
+        print(f"mostrar_datos() -->> \n{self.get_salida_tabulada(0)}\n" + "-" * 104 + "\n")

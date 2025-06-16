@@ -1,7 +1,6 @@
 import requests
 
 from bs4 import BeautifulSoup
-from PIL.Image import Image
 
 from centinela.datos_persistentes import Lectura
 from scrappers.scrapper import Scrapper
@@ -13,9 +12,8 @@ class ScrapperVerkami(Scrapper):
     la Web de Verkami.  Implementa la interfaz Scrapper que permite
     diversificar los tipos Webs a leer en cada caso.
     """
-    def __init__(self, url: str, nombre: str = "",
-                 imagen: Image | None = None):
-        super().__init__(url, nombre, imagen)
+    def __init__(self, titulo: str, url: str):
+        super().__init__(titulo, url)
 
     def leer_datos(self) -> Lectura | None:
         # Enviar solicitud GET a la página
@@ -60,13 +58,14 @@ class ScrapperVerkami(Scrapper):
         importe_recaudado = float(counter_values[2].text.strip().replace('€', '')
                                   .replace('.', '').replace(',', '.'))
 
-        datos_web = Lectura(
+        lectura = Lectura(
+            titulo=self.titulo,
             fecha=Scrapper._get_timestamp(),
-            restante_valor=valor_campo1,
-            restante_unidades=etiq_campo1,
+            restante=valor_campo1,
+            unidades=etiq_campo1,
             aportaciones=valor_campo2,
             objetivo=importe_objetivo,
             total=importe_recaudado,
         )
 
-        return datos_web
+        return lectura
