@@ -94,7 +94,6 @@ class ChatbotTelegram(Chatbot):
     async def _handle_echo(self, message: Message):
         """Callbacks para reaccionar con una respuesta por defecto"""
         await self._bot.delete_message(message.chat.id, message.message_id)
-        # await message.answer(text="mensaje...", reply_markup=self._keyboard)
         await self._bot.send_photo(
             chat_id=message.chat.id,
             photo=BANNER_TELEGRAM_ID,
@@ -127,7 +126,7 @@ class ChatbotTelegram(Chatbot):
         for chat_id in list(self._suscriptores):
             await self.enviar_mensaje_usuario(chat_id, texto)
             if keyboard:
-                await self._dp.message.reply(text=MENSAJE_FIJO, reply_markup=self._keyboard)
+                await self._bot.send_message(chat_id=chat_id, text=MENSAJE_FIJO, reply_markup=self._keyboard)
 
     async def detener(self):
         # En aiogram, puedes cerrar el bot manualmente si lo necesitas

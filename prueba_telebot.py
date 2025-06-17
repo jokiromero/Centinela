@@ -5,6 +5,7 @@ import telebot
 
 logging.basicConfig(level=logging.DEBUG, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
 
+
 class BotTelegram:
     def __init__(self, token: str):
         self._bot = telebot.TeleBot(token)
