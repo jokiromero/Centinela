@@ -59,7 +59,7 @@ class BotTelegram:
         self._bot.send_message(chat_id, texto)
 
     def detener(self):
-        # En Telebot, no hay un método específico para detener el bot
+        # En Telebot, no hay un método específico para desactivar el bot
         # Puedes utilizar un flag para controlar el bucle de polling
         print("Bot detenido.")
 

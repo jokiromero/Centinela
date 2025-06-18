@@ -7,7 +7,7 @@ from PIL import ImageFile
 from pystray import Icon, Menu, MenuItem
 
 from centinela import tools, config
-from charbots.chatbot_telegram import ChatbotTelegram
+from chatbots.chatbot_telegram import ChatbotTelegram
 from scrappers.scrapper_verkami import ScrapperVerkami
 from scrappers.scrapper_random import ScrapperRandom
 from centinela.datos_persistentes import DatosPersistentes, Lectura
@@ -91,6 +91,11 @@ def accion_fijar_notificaciones(icon, valor=0):
 def accion_activar_voz(icon):
     config.voz_activada = not config.voz_activada
     print(f"Menú activar/desactivar voz >> {config.voz_activada=}")
+    fin_mensaje = "activados" if config.voz_activada else "desactivados"
+    tools.mostrar_notificacion(
+        msg="Mensajes de voz " + fin_mensaje,
+        msg_hablado="Los mensajes de voz han sido " + fin_mensaje
+    )
     icon.icon = get_logo()
     icon.menu = get_menu()
     icon.update_menu()
@@ -121,7 +126,7 @@ if __name__ == '__main__':
     # scrap = ScrapperVerkami(url=config.URL_MORTADELO, titulo="Proyecto Mortadelo")
 
     # bot = ChatbotTelegram(config.TOKEN_TELEGRAM)
-    # bot.iniciar()
+    # bot._iniciar_bot()
 
     data = DatosPersistentes(config.FICHERO_EXCEL_DATOS, clase_dato=Lectura, bot=None)
 

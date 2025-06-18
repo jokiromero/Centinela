@@ -36,11 +36,7 @@ class ScrapperRandom(Scrapper):
 
 
     def leer_datos(self) -> Lectura:
-        if self.hemos_terminado():
-            self._lectura.titulo = self.titulo + "(TERMINADO)"
-            self._lectura.restante = 0
-
-        else:
+        if not self.hemos_terminado():
             # Determina si ha de simularse que los datos de origen han cambiado
             if self._lectura.total == 0:
                 # Fuerza a que la primera vez siempre lea datos nuevos
@@ -67,6 +63,10 @@ class ScrapperRandom(Scrapper):
                     total=self._lectura.total + delta_total
                 )
                 self._lectura = lectura
+
+                if self.hemos_terminado():
+                    self._lectura.titulo = self.titulo + "(TERMINADO)"
+                    self._lectura.restante = 0
 
         return self._lectura
 

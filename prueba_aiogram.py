@@ -148,7 +148,7 @@ if __name__ == '__main__':
             await asyncio.sleep(10)
 
         # Si quisieras terminar:
-        # await bot.detener()
+        # await bot.desactivar()
     try:
         asyncio.run(main())
     except Exception as e:

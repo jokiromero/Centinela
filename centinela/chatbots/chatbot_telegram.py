@@ -1,12 +1,15 @@
 import logging
 import asyncio
+import threading
+
+from time import time, sleep
 
 from aiogram.filters import Command
 from aiogram.types import Message
 from aiogram import Bot, Dispatcher, types
 from aiogram.types import InlineKeyboardButton, InlineKeyboardMarkup
 from centinela import config
-from centinela.charbots.chatbot import Chatbot
+from centinela.chatbots.chatbot import Chatbot
 
 logging.basicConfig(level=logging.INFO,
                     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
@@ -32,6 +35,7 @@ class ChatbotTelegram(Chatbot):
                 InlineKeyboardButton(text="👎 Cancelar Suscripción", callback_data="off")
             ]]
         )
+        self._activo = False
 
     def _register_handlers(self):
         # self._dp.message.register(self._handle_start, Command(commands=["start"]))
@@ -52,7 +56,7 @@ class ChatbotTelegram(Chatbot):
 
     async def _handle_start(self, message: Message):
         """Callbacks para recoger el comando /start"""
-        await self.iniciar()
+        await self._iniciar_bot()
 
     async def _handle_help(self, message: Message):
         """Callbacks para recoger el comando /help"""
@@ -75,7 +79,6 @@ class ChatbotTelegram(Chatbot):
                    f"chat cada vez que éstas ocurran.\n\n"
                    f"💚💚💚 ¡¡Gracias por usar Centinela!! ")
         else:
-            nombre = self._suscriptores[message.chat.id]
             msg = f"{message.chat.full_name}, ya estás suscrito a las notificaciones de Centinela."
         await message.answer(msg)
 
@@ -107,51 +110,91 @@ class ChatbotTelegram(Chatbot):
         #     file_id = message.photo[-1].file_id
         #     await message.answer(f"El ID de la imagen es: {file_id}")
 
-    async def iniciar(self):
+    async def _iniciar_bot(self):
         print("Bot iniciado (aiogram)")
         try:
             await self._dp.start_polling(self._bot)
         except Exception as e:
             logging.error(f"Error en 'start_polling': {e}")
             raise
-        self._iniciado = True
-        await self.enviar_mensaje_a_suscriptores("ATENCIÓN: El bot ha sido iniciado...")
-        await self.enviar_mensaje_a_suscriptores("Seleccione una opción:", keyboard=True)
+        # await self.enviar_mensaje_a_suscriptores("ATENCIÓN: El bot ha sido iniciado...")
+        # await self.enviar_mensaje_a_suscriptores(
+        #     "Seleccione una opción:", keyboard=True
+        # )
 
     async def enviar_mensaje_usuario(self, chat_id: int, texto: str):
         await self._bot.send_message(chat_id, texto)
 
+
     async def enviar_mensaje_a_suscriptores(self, texto: str, keyboard=False):
+        usuarios_conectados = await self._dp.observers
         print(f">>> {self._suscriptores=}")
         for chat_id in list(self._suscriptores):
             await self.enviar_mensaje_usuario(chat_id, texto)
             if keyboard:
-                await self._bot.send_message(chat_id=chat_id, text=MENSAJE_FIJO, reply_markup=self._keyboard)
+                await self._bot.send_message(
+                    chat_id=chat_id, text=MENSAJE_FIJO, reply_markup=self._keyboard
+                )
 
-    async def detener(self):
+    def _activar_bot_loop(self):
+        loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(loop)
+        self._task = loop.create_task(self._iniciar_bot())
+        loop.run_forever()
+
+    def activar(self):
+        if not self._activo:
+            threading.Thread(target=self._activar_bot_loop,
+                             daemon=True).start()
+            self._activo = True
+
+    def desactivar(self):
         # En aiogram, puedes cerrar el bot manualmente si lo necesitas
-        await self._bot.session.close()
-        print("Bot detenido.")
-        self._iniciado = False
+        # await self._bot.session.close()
+        if self._activo:
+            self._task.cancel()
+            self._activo = False
+            print("Bot detenido.")
 
 
 if __name__ == '__main__':
+    # async def main(bot: Chatbot):
+    #     task_bot = asyncio.create_task(bot._iniciar_bot())
+    #     # Simulamos lógica adicional
+    #     while True:
+    #         print("App principal ejecutando otras tareas...")
+    #         msg = (f"ATENCIÓN: Está recibiendo este mensaje por estar suscrito a las "
+    #                f"notificaciones de Centinela\n")
+    #         await bot.enviar_mensaje_a_suscriptores(texto=msg, keyboard=True)
+    #         await asyncio.sleep(10)
+    #
+    #     # Si quisieras terminar:
+    #     # await bot.desactivar()
+    # try:
+    #     mibot = ChatbotTelegram(config.TOKEN_TELEGRAM)
+    #     asyncio.run(main(mibot))
+    #
+    # except Exception as ex:
+    #     logging.error(f"Error en el bot: {ex}")
+    #     raise
+
     async def main(bot: Chatbot):
-        task_bot = asyncio.create_task(bot.iniciar())
-        # Simulamos lógica adicional
-        while True:
-            print("App principal ejecutando otras tareas...")
-            msg = (f"ATENCIÓN: Está recibiendo este mensaje por estar suscrito a las "
-                   f"notificaciones de Centinela\n")
-            await bot.enviar_mensaje_a_suscriptores(texto=msg, keyboard=True)
-            await asyncio.sleep(10)
+        await bot.activar()
+        sleep(10)
+        await bot.enviar_mensaje_a_suscriptores("Prueba de mensaje")
+        sleep(5)
+        await bot.enviar_mensaje_a_suscriptores("Prueba de mensaje")
+        sleep(5)
+        await bot.enviar_mensaje_a_suscriptores("Prueba de mensaje")
+        sleep(5)
+        await bot.enviar_mensaje_a_suscriptores("Prueba de mensaje")
+        sleep(5)
+        await bot.enviar_mensaje_a_suscriptores("Prueba de mensaje")
+        sleep(5)
+        await bot.enviar_mensaje_a_suscriptores("Prueba de mensaje")
+        sleep(5)
+        await bot.desactivar()
 
-        # Si quisieras terminar:
-        # await bot.detener()
-    try:
-        mibot = ChatbotTelegram(config.TOKEN_TELEGRAM)
-        asyncio.run(main(mibot))
 
-    except Exception as ex:
-        logging.error(f"Error en el bot: {ex}")
-        raise
+    bot = ChatbotTelegram(token=config.TOKEN_TELEGRAM)
+    main(bot)

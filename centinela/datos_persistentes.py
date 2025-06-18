@@ -12,8 +12,8 @@ from num2words import num2words
 from pandas.errors import DataError
 
 from centinela import tools, config
-from centinela.charbots.chatbot import Chatbot
-from centinela.charbots.chatbot_telegram import ChatbotTelegram
+from centinela.chatbots.chatbot import Chatbot
+from centinela.chatbots.chatbot_telegram import ChatbotTelegram
 
 cols = {
     "ti": "Titulo",         # Un nombre diferenciador para mostrar
@@ -230,8 +230,8 @@ class DatosPersistentes:
             )
             print(f"{self._bot=}")
             if self._bot:
-                print(f"{self._bot.esta_iniciado=}")
-                if self._bot.esta_iniciado:
+                print(f"{self._bot.esta_activo=}")
+                if self._bot.esta_activo:
                     self._bot.enviar_mensaje_a_suscriptores(texto=msg, keyboard=True)
 
         print(f"Lectura de datos desde: {self.lectura_nueva.titulo}  -->>  {self.lectura_nueva.fecha}  ({config.tupla_intervalo_activo[0]})")

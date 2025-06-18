@@ -65,13 +65,3 @@ LOGO_INACTIVO = Image.open(os.path.join(carpeta, r"images\ojo_cerrado.png"))
 ICONO_ACTIVO_FICH = os.path.join(carpeta, r"images\ojo_abierto.ico")
 TOKEN_TELEGRAM = _get_clave("token")
 CENTINELA_LINK = "https://t.me/Centinela_autobot"
-
-"""
-ICONO CODIFICADO
-8126096557:AAFqH6XABfmd-ZQlVdoSHiCAVT9O8JMt0iY fmd-ZQlVd t0iY 8126 
-iCAVT 7:AAFq doS 60 9O8JM fmd- doS  9O8 JM fmd- dAFq iY fm 
-O8JMt0iY fmd-ZQlVd 7:AAFq doS 60 9O8 JM fmd- doS md-ZQlVd t0
-XABfmd t0iY fm  9O8 JM fmd- d -ZQlVd 7:AAFq iY fm AFq doS 6
-"""
-
-

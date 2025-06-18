@@ -18,7 +18,7 @@ class BotTelegram:
     async def _iniciar_bot(self):
         await self.dp.start_polling(self.bot)
 
-    def _run_bot(self):
+    def _activar_bot_loop(self):
         loop = asyncio.new_event_loop()
         asyncio.set_event_loop(loop)
         self.task = loop.create_task(self._iniciar_bot())
@@ -26,7 +26,7 @@ class BotTelegram:
 
     def arrancar(self):
         if not self.activo:
-            threading.Thread(target=self._run_bot).start()
+            threading.Thread(target=self._activar_bot_loop).start()
             self.activo = True
 
     def parar(self):
@@ -131,15 +131,15 @@ async def enviar_mensaje_a_todos(mensaje):
     for usuario in usuarios:
         await bot.send_message(usuario.id, mensaje)
 
-# Función para iniciar el bot
-async def iniciar_bot():
+# Función para _iniciar_bot el bot
+async def _iniciar_bot():
     await dp.start_polling(bot)
 
 def run_bot():
     global bot_task
     loop = asyncio.new_event_loop()
     asyncio.set_event_loop(loop)
-    bot_task = loop.create_task(iniciar_bot())
+    bot_task = loop.create_task(_iniciar_bot())
     loop.run_forever()
 
 def iniciar_bot_thread():
@@ -148,7 +148,7 @@ def iniciar_bot_thread():
         threading.Thread(target=run_bot).start()
         bot_activo = True
 
-# Función para detener el bot
+# Función para desactivar el bot
 def detener_bot():
     global bot_activo
     global bot_task
@@ -202,7 +202,7 @@ image = Image.open("icono.png")
 with Icon("Mi aplicación", image, menu=crear_menu()) as icon:
     icon.run()
 ```
-En este ejemplo, se utiliza el objeto `Dispatcher` para iniciar el bot y se crea un hilo separado para ejecutar el bucle de eventos de asyncio. Cuando se desactiva el bot, se cancela la tarea de asyncio que ejecuta el bucle de eventos.
+En este ejemplo, se utiliza el objeto `Dispatcher` para _iniciar_bot el bot y se crea un hilo separado para ejecutar el bucle de eventos de asyncio. Cuando se desactiva el bot, se cancela la tarea de asyncio que ejecuta el bucle de eventos.
 
 
 
@@ -238,8 +238,8 @@ async def enviar_mensaje_a_todos(mensaje):
     for usuario in usuarios:
         await bot.send_message(usuario.id, mensaje)
 
-# Función para iniciar el bot
-def iniciar_bot():
+# Función para _iniciar_bot el bot
+def _iniciar_bot():
     global bot_thread
     global bot_activo
     if not bot_activo:
@@ -247,7 +247,7 @@ def iniciar_bot():
         bot_thread.start()
         bot_activo = True
 
-# Función para detener el bot
+# Función para desactivar el bot
 def detener_bot():
     global bot_activo
     if bot_activo:
@@ -270,7 +270,7 @@ def enviar_mensaje(icon):
     asyncio.run(enviar_mensaje_a_todos("Hola, soy un mensaje desde la bandeja de notificaciones!"))
 
 def activar_bot(icon):
-    iniciar_bot()
+    _iniciar_bot()
     mostrar_notificacion("Bot activado", "El bot de Telegram ha sido activado")
     icon.menu = Menu(
         MenuItem("Desactivar bot", desactivar_bot),

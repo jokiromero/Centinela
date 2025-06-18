@@ -4,7 +4,8 @@ from abc import ABC, abstractmethod
 class Chatbot(ABC):
     def __init__(self):
         self._inicializado = False
-        self._iniciado = False
+        self._activo = False
+        self._task = None
 
     @abstractmethod
     def _inicializar(self, *args, **kwargs) -> None:
@@ -15,11 +16,11 @@ class Chatbot(ABC):
             raise RuntimeError("La clase no ha sido inicializada correctamente...")
 
     @property
-    def esta_iniciado(self) -> bool:
-        return self._iniciado
+    def esta_activo(self) -> bool:
+        return self._activo
 
     @abstractmethod
-    async def iniciar(self, *args, **kwargs):
+    async def _iniciar_bot(self, *args, **kwargs):
         pass
 
     @abstractmethod
@@ -31,6 +32,10 @@ class Chatbot(ABC):
         pass
 
     @abstractmethod
-    async def detener(self):
+    async def activar(self):
+        pass
+
+    @abstractmethod
+    async def desactivar(self):
         pass
 
