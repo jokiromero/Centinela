@@ -9,6 +9,7 @@ from pystray import Icon, Menu, MenuItem
 from centinela import tools, config
 from charbots.chatbot_telegram import ChatbotTelegram
 from scrappers.scrapper_verkami import ScrapperVerkami
+from scrappers.scrapper_random import ScrapperRandom
 from centinela.datos_persistentes import DatosPersistentes, Lectura
 
 
@@ -116,13 +117,15 @@ if __name__ == '__main__':
     centinela_system_tray = Icon(config.APP_NOMBRE, get_logo(), menu=get_menu())
 
     # scrap = ScrapperVerkami(url=config.URL_ISPHANYA)
-    scrap = ScrapperVerkami(url=config.URL_MORTADELO, titulo="Proyecto Mortadelo")
+    scrap = ScrapperRandom(titulo="Datos sintéticos")
+    # scrap = ScrapperVerkami(url=config.URL_MORTADELO, titulo="Proyecto Mortadelo")
 
     # bot = ChatbotTelegram(config.TOKEN_TELEGRAM)
     # bot.iniciar()
-    # data = DatosPersistentes(config.FICHERO_EXCEL_DATOS, clase_dato=Lectura, bot=bot)
 
-    # Iniciamos la tarea de centinela en un hilo en segundo plano
+    data = DatosPersistentes(config.FICHERO_EXCEL_DATOS, clase_dato=Lectura, bot=None)
+
+    # Iniciar la tarea de centinela en un hilo en segundo plano
     hilo_principal = threading.Thread(name="hilo_principal", target=bucle_principal)
     hilo_principal.daemon = True  # Para que el hilo se detenga cuando se cierre la aplicación
     hilo_principal.start()

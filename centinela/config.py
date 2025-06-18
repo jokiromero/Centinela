@@ -40,7 +40,7 @@ INTERVALOS = {
     "Cada 15 minutos": 15,
     "Cada 20 minutos": 20,
     "Cada 45 minutos": 45,
-    "Cada hora": 60,
+    "Cada minuto": 1,
 }
 
 APP_NOMBRE = "Centinela"

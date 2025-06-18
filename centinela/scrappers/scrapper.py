@@ -15,6 +15,10 @@ class Scrapper(metaclass=ABCMeta):
         self._url = url
 
     @abstractmethod
+    def hemos_terminado(self) -> bool:
+        return False
+
+    @abstractmethod
     def leer_datos(self) -> Any:
         pass
 

@@ -21,40 +21,52 @@ class ScrapperRandom(Scrapper):
         self._lectura = Lectura(
             titulo=self.titulo,
             restante=random.choices(
-                population=[10, 15, 20],
-                weights=[10, 6, 3]
+                population=[2, 8, 10],
+                weights=[100, 1, 1]
             )[0],
-            unidades="Días",
+            unidades="Dias",
             aportaciones=0,
             objetivo=random.randint(10, 100) * 1000,
             total=0
         )
         self._lectura.set_fecha()
-        self._primera_vez = True
+
+    def hemos_terminado(self) -> bool:
+        return self._lectura.restante < 1
+
 
     def leer_datos(self) -> Lectura:
-        if self._primera_vez:
-            self._primera_vez = False
-            return self._lectura
+        if self.hemos_terminado():
+            self._lectura.titulo = self.titulo + "(TERMINADO)"
+            self._lectura.restante = 0
 
-        hay_datos_nuevos = random.choices(
-            population=[True, False],
-            weights=[self._ratio_valores_nuevos, 1 - self._ratio_valores_nuevos]
-        )[0]
-        if hay_datos_nuevos:
-            delta_restante = random.choices(population=[0, 1], weights=[8, 2])[0]
-            delta_aportaciones = random.randint(5, 20)
-            delta_total = random.randint(10, 100) * delta_aportaciones
-            lectura = Lectura(
-                titulo=self.titulo,
-                fecha=Scrapper._get_timestamp(),
-                restante=self._lectura.restante - delta_restante,
-                unidades="Días",
-                aportaciones=self._lectura.aportaciones + delta_aportaciones,
-                objetivo=self._lectura.objetivo,
-                total=self._lectura.total + delta_total
-            )
-            self._lectura = lectura
+        else:
+            # Determina si ha de simularse que los datos de origen han cambiado
+            if self._lectura.total == 0:
+                # Fuerza a que la primera vez siempre lea datos nuevos
+                hay_datos_nuevos = True
+            else:
+                hay_datos_nuevos = random.choices(
+                    population=[True, False],
+                    weights=[self._ratio_valores_nuevos, 1 - self._ratio_valores_nuevos]
+                )[0]
+
+            # Si los datos han cambiado calacula los "delta" de cada dato para
+            # calcular con ellos los nuevos datos que van a simular a los datos leídos
+            if hay_datos_nuevos:
+                delta_restante = random.choices(population=[0, 1], weights=[25, 75])[0]
+                delta_aportaciones = random.randint(5, 20)
+                delta_total = sum([random.randint(10, 100) for _ in range(delta_aportaciones)])
+                lectura = Lectura(
+                    titulo=self.titulo,
+                    fecha=Scrapper._get_timestamp(),
+                    restante=self._lectura.restante - delta_restante,
+                    unidades="Dias",
+                    aportaciones=self._lectura.aportaciones + delta_aportaciones,
+                    objetivo=self._lectura.objetivo,
+                    total=self._lectura.total + delta_total
+                )
+                self._lectura = lectura
 
         return self._lectura
 

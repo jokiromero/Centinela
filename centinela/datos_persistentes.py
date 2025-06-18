@@ -51,8 +51,9 @@ class DatosPersistentes:
                  clase_dato: Type=Lectura,
                  bot: Chatbot | None=None):
         self._df = None  # DataFrame
+        self._bot = bot
         if not dataclasses.is_dataclass(clase_dato):
-            raise TypeError("Se esperaba una clase 'Dataclass'...")
+            raise TypeError("Se esperaba una clase de tipo 'Dataclass'...")
 
         self._clase_dato = clase_dato
         self._lectura_anterior: Lectura = Lectura()
@@ -82,8 +83,6 @@ class DatosPersistentes:
                     total=self._df.iloc[-1][cols["t"]],
                 )
 
-        if bot:
-            self._bot = bot
 
 
     def _validar_campos(self) -> bool:
@@ -162,12 +161,21 @@ class DatosPersistentes:
         else:
             return None
 
-    def get_salida_tabulada(self, formato: Literal[0, 1, 2]) -> str:
-        def _formato0(lec: Lectura) -> str:
+    def get_salida_tabulada(self, formato: Literal["a", "b", "c", "ab"]) -> str:
+        def _formato_a(lec: Lectura) -> str:
             df = pd.DataFrame(asdict(lec), index=[0])
             return df.to_string(index=False)
 
-        def _formato1(lec: Lectura) -> str:
+        def _formato_ab(lec: Lectura) -> str:
+            df = pd.DataFrame(asdict(lec), index=[0])
+            linea1 = "\n" + df[["titulo", "fecha", "objetivo"]].to_string(index=False)
+            linea2 = "\n" + df[["restante", "unidades", "aportaciones", "total"]].to_string(index=False)
+            largo = int(max(len(linea1), len(linea2)) / 2)
+            rayas = "\n" + "-" * largo
+            fmt = linea1 + rayas + linea2 + rayas
+            return fmt
+
+        def _formato_b(lec: Lectura) -> str:
             fmt = f"{lec.titulo:28}\n"
             fmt += f"{lec.unidades:18} = {lec.restante:8d}\n"
             fmt += f"{cols['a']:18} = {lec.aportaciones:8d}\n"
@@ -175,21 +183,27 @@ class DatosPersistentes:
             fmt += f"{cols['t']:18} = {lec.total:11,.2f} €"
             return fmt
 
-        def _formato2(lec: Lectura) -> str:
+        def _formato_c(lec: Lectura) -> str:
+            promedio = 0
+            if lec.aportaciones != 0:
+                promedio = lec.total / lec.aportaciones
+
             fmt = f"{lec.titulo:28}\n"
             fmt += f"{lec.restante} {lec.unidades}.  {cols['o'][:3]}: {lec.objetivo:7,.0f} €\n"
             fmt += f"{lec.aportaciones} {cols['a'][:5]}. {cols['t']}: {lec.total:7,.0f} €\n"
-            fmt += f"({(lec.total / lec.aportaciones):,.0f} € promedio por aport.)"
+            fmt += f"({promedio:,.0f} € promedio por aport.)"
             return fmt
 
         salida = ""
 
-        if formato == 0:
-            salida = _formato0(self.lectura_nueva)
-        elif formato == 1:
-            salida = _formato1(self.lectura_nueva)
-        elif formato == 2:
-            salida = _formato2(self.lectura_nueva)
+        if formato == "a":
+            salida = _formato_a(self.lectura_nueva)
+        elif formato == "b":
+            salida = _formato_b(self.lectura_nueva)
+        elif formato == "c":
+            salida = _formato_c(self.lectura_nueva)
+        elif formato == "ab":
+            salida = _formato_ab(self.lectura_nueva)
 
         return salida
 
@@ -207,7 +221,7 @@ class DatosPersistentes:
             numero = num2words(number=self.lectura_nueva.total, lang="es")
             msg_voz = f"Atención: se ha alcanzado un total de {numero} euros"
             print(f"mostrar_datos() >> {config.voz_activada=}")
-            msg = self.get_salida_tabulada(2)
+            msg = self.get_salida_tabulada(formato="c")
             tools.mostrar_notificacion(
                 titulo=self.lectura_nueva.fecha + titulo2,
                 msg=msg,
@@ -221,4 +235,5 @@ class DatosPersistentes:
                     self._bot.enviar_mensaje_a_suscriptores(texto=msg, keyboard=True)
 
         print(f"Lectura de datos desde: {self.lectura_nueva.titulo}  -->>  {self.lectura_nueva.fecha}  ({config.tupla_intervalo_activo[0]})")
-        print(f"mostrar_datos() -->> \n{self.get_salida_tabulada(0)}\n" + "-" * 104 + "\n")
+        # print(f"mostrar_datos() (formato 'a' ) -->> \n{self.get_salida_tabulada("a")}\n" + "-" * 104 + "\n")
+        print(f"mostrar_datos() (formato 'ab') -->> \n{self.get_salida_tabulada("ab")}\n")

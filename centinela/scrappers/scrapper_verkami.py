@@ -15,6 +15,21 @@ class ScrapperVerkami(Scrapper):
     def __init__(self, titulo: str, url: str):
         super().__init__(titulo, url)
 
+        # Valores iniciales - Primera lectura
+        self._lectura = Lectura(
+            titulo=self.titulo,
+            restante=0,
+            unidades="",
+            aportaciones=0,
+            objetivo=0,
+            total=0
+        )
+        self._lectura.set_fecha()
+
+    def hemos_terminado(self) -> bool:
+        return self._lectura.restante < 1
+
+
     def leer_datos(self) -> Lectura | None:
         # Enviar solicitud GET a la página
         response = requests.get(self._url)
