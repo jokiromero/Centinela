@@ -68,6 +68,8 @@ class ScrapperRandom(Scrapper):
                     self._lectura.titulo = self.titulo + "(TERMINADO)"
                     self._lectura.restante = 0
 
+            self._lectura.set_fecha()
+
         return self._lectura
 
 

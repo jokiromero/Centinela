@@ -13,7 +13,6 @@ from pandas.errors import DataError
 
 from centinela import tools, config
 from centinela.chatbots.chatbot import Chatbot
-from centinela.chatbots.chatbot_telegram import ChatbotTelegram
 
 cols = {
     "ti": "Titulo",         # Un nombre diferenciador para mostrar
@@ -131,9 +130,7 @@ class DatosPersistentes:
     @lectura_nueva.setter
     def lectura_nueva(self, datos_nuevos: Lectura):
         # Antes sustituir la lectura nueva, saca una copia como lectura anterior
-        print(f"_guardar_lectura() copia la lectura nueva como anterior: {self.lectura_nueva}")
         self._lectura_anterior = copy(self.lectura_nueva)
-        print(f"_guardar_lectura() copia = {self.lectura_anterior}")
         # Y ahora puede ya machacarla con el nuevo valor recién leído
         self._lectura_nueva = copy(datos_nuevos)
 
@@ -141,7 +138,7 @@ class DatosPersistentes:
             self._lectura_nueva.set_fecha()
 
         if self.datos_cambiados:
-            print("lectura_nueva() ha detectado que los datos_web han cambiado...")
+            # print("lectura_nueva() ha detectado que los datos_web han cambiado...")
             d = asdict(datos_nuevos)
             for clave in list(d.keys()):
                 d[clave.capitalize()] = d.pop(clave)
@@ -207,7 +204,7 @@ class DatosPersistentes:
 
         return salida
 
-    def mostrar_datos(self, es_una_repeticion=False):
+    async def mostrar_datos(self, es_una_repeticion=False, con_voz=False):
         if ((config.tipo_notificaciones_activo == config.Notificaciones.TODOS_LOS_INTERVALOS or
              (config.tipo_notificaciones_activo == config.Notificaciones.SOLO_CAMBIOS
               and self.datos_cambiados)) or es_una_repeticion):
@@ -220,19 +217,19 @@ class DatosPersistentes:
 
             numero = num2words(number=self.lectura_nueva.total, lang="es")
             msg_voz = f"Atención: se ha alcanzado un total de {numero} euros"
-            print(f"mostrar_datos() >> {config.voz_activada=}")
+            print(f"mostrar_datos() >> {con_voz=}")
             msg = self.get_salida_tabulada(formato="c")
             tools.mostrar_notificacion(
                 titulo=self.lectura_nueva.fecha + titulo2,
                 msg=msg,
-                msg_hablado=msg_voz if config.voz_activada else "",
+                msg_hablado=msg_voz if con_voz else "",
                 sonido=melodia
             )
             print(f"{self._bot=}")
             if self._bot:
                 print(f"{self._bot.esta_activo=}")
                 if self._bot.esta_activo:
-                    self._bot.enviar_mensaje_a_suscriptores(texto=msg, keyboard=True)
+                    await self._bot.enviar_mensaje_a_suscriptores(texto=msg, keyboard=True)
 
         print(f"Lectura de datos desde: {self.lectura_nueva.titulo}  -->>  {self.lectura_nueva.fecha}  ({config.tupla_intervalo_activo[0]})")
         # print(f"mostrar_datos() (formato 'a' ) -->> \n{self.get_salida_tabulada("a")}\n" + "-" * 104 + "\n")

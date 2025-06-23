@@ -14,7 +14,7 @@ logging.basicConfig(level=logging.DEBUG,
 MENSAJE_FIJO = "Opciones disponibles:"
 BANNER_TELEGRAM_ID = "AgACAgQAAxkBAAMTaElcxdIpY-3UdJnFwxc4V_e1KwEAArXFMRvJ5ElSVNaFlbLAShsBAAMCAAN5AAM2BA"
 
-class ChatBot:
+class ChatPrueba:
     def __init__(self, token: str):
         self._bot = Bot(token)
         self._dp = Dispatcher()
@@ -137,7 +137,7 @@ class ChatBot:
 
 if __name__ == '__main__':
     async def main():
-        bot = ChatBot(config.TOKEN_TELEGRAM)
+        bot = ChatPrueba(config.TOKEN_TELEGRAM)
         task_bot = asyncio.create_task(bot.iniciar())
         # Simulamos lógica adicional
         while True:

@@ -1,306 +1,334 @@
-Aquí te muestro el código modificado para separar en dos clases separadas:
-```
 import asyncio
 import threading
-from aiogram import Bot, Dispatcher, types
-import pystray
-from pystray import Icon, Menu, MenuItem
-from PIL import Image
+import time
+from typing import List
+from dataclasses import dataclass
 from plyer import notification
+import requests
+from bs4 import BeautifulSoup
+import pystray
+from PIL import Image, ImageDraw
+from pystray import MenuItem as item
+from aiogram import Bot, Dispatcher, types
+from aiogram.utils import executor
 
-class BotTelegram:
-    def __init__(self, token):
+
+# ------------------- Config -------------------
+@dataclass
+class AppConfig:
+    interval_minutes: int = 5
+    telegram_enabled: bool = True
+
+
+app_config = AppConfig()
+
+
+# ------------------- Scraper -------------------
+class StockScraper:
+    def __init__(self):
+        self.last_data = {}
+
+    def fetch_data(self) -> dict:
+        # Simulación de scraping (usar URL real y parsing correcto)
+        url = 'https://example.com/stocks'
+        html = requests.get(url).text
+        soup = BeautifulSoup(html, 'html.parser')
+
+        # Simulación de extracción
+        data = {'AAPL': '180.00', 'GOOGL': '2800.00'}
+        return data
+
+    def has_changed(self, new_data: dict) -> bool:
+        if new_data != self.last_data:
+            self.last_data = new_data
+            return True
+        return False
+
+
+# ------------------- Notifier -------------------
+def notify(title: str, message: str):
+    notification.notify(
+        title=title,
+        message=message,
+        timeout=5
+    )
+
+
+# ------------------- Telegram Bot -------------------
+class TelegramBot:
+    def __init__(self, token: str):
         self.bot = Bot(token=token)
         self.dp = Dispatcher(self.bot)
-        self.activo = False
-        self.task = None
+        self.active = True
+        self.users: List[int] = []
 
-    async def _iniciar_bot(self):
-        await self.dp.start_polling(self.bot)
+        @self.dp.message_handler(commands=['start'])
+        async def start(msg: types.Message):
+            if msg.from_user.id not in self.users:
+                self.users.append(msg.from_user.id)
+            await msg.reply("Te has suscrito a las notificaciones de cotizaciones.")
 
-    def _activar_bot_loop(self):
-        loop = asyncio.new_event_loop()
-        asyncio.set_event_loop(loop)
-        self.task = loop.create_task(self._iniciar_bot())
-        loop.run_forever()
-
-    def arrancar(self):
-        if not self.activo:
-            threading.Thread(target=self._activar_bot_loop).start()
-            self.activo = True
-
-    def parar(self):
-        if self.activo:
-            self.task.cancel()
-            self.activo = False
-
-    async def enviar_mensaje_a_todos(self, mensaje):
-        # Obtener la lista de usuarios conectados
-        usuarios = await self.dp.storage.get_users()
-
-        # Enviar el mensaje a cada usuario
-        for usuario in usuarios:
-            await self.bot.send_message(usuario.id, mensaje)
-
-    async def enviar_mensaje(self, mensaje):
-        await self.enviar_mensaje_a_todos(mensaje)
-
-class App:
-    def __init__(self, token):
-        self.bot = BotTelegram(token)
-        self.icon = None
-
-    def mostrar_notificacion(self, titulo, mensaje):
-        notification.notify(
-            title=titulo,
-            message=mensaje,
-            app_name="Mi aplicación",
-            timeout=10
-        )
-
-    def activar_bot(self, icon):
-        self.bot.arrancar()
-        self.mostrar_notificacion("Bot activado", "El bot de Telegram ha sido activado")
-        icon.menu = Menu(
-            MenuItem("Desactivar bot", self.desactivar_bot),
-            MenuItem("Enviar mensaje", self.enviar_mensaje),
-            MenuItem("Salir", lambda icon: icon.stop())
-        )
-        icon.update_menu()
-
-    def desactivar_bot(self, icon):
-        self.bot.parar()
-        self.mostrar_notificacion("Bot desactivado", "El bot de Telegram ha sido desactivado")
-        icon.menu = Menu(
-            MenuItem("Activar bot", self.activar_bot),
-            MenuItem("Salir", lambda icon: icon.stop())
-        )
-        icon.update_menu()
-
-    def enviar_mensaje(self, icon):
-        asyncio.run(self.bot.enviar_mensaje("Hola, soy un mensaje desde la bandeja de notificaciones!"))
-
-    def crear_menu(self):
-        return Menu(
-            MenuItem("Activar bot", self.activar_bot),
-            MenuItem("Salir", lambda icon: icon.stop())
-        )
+    async def broadcast(self, text: str):
+        if self.active:
+            for user in self.users:
+                try:
+                    await self.bot.send_message(user, text)
+                except Exception as e:
+                    print(f"Error al enviar a {user}: {e}")
 
     def run(self):
-        image = Image.open("icono.png")
-        self.icon = Icon("Mi aplicación", image, menu=self.crear_menu())
-        self.icon.run()
+        executor.start_polling(self.dp, skip_updates=True)
+
+
+# ------------------- System Tray -------------------
+def create_image():
+    image = Image.new('RGB', (64, 64), color=(0, 0, 0))
+    dc = ImageDraw.Draw(image)
+    dc.rectangle((0, 0, 64, 64), fill=(255, 255, 255))
+    dc.text((10, 20), "S")
+    return image
+
+def tray_menu(icon, item):
+    if str(item) == 'Salir':
+        icon.stop()
+        asyncio.get_event_loop().stop()
+    elif 'Intervalo' in str(item):
+        value = int(str(item).split(' ')[-1])
+        app_config.interval_minutes = value
+    elif 'Telegram' in str(item):
+        app_config.telegram_enabled = not app_config.telegram_enabled
+
+
+def run_tray():
+    icon = pystray.Icon("StockNotifier")
+    icon.icon = create_image()
+    icon.menu = pystray.Menu(
+        item('Salir', tray_menu),
+        item('Intervalo 5 min', tray_menu),
+        item('Intervalo 30 min', tray_menu),
+        item('Intervalo 60 min', tray_menu),
+        item('Telegram ON/OFF', tray_menu)
+    )
+    icon.run()
+
+
+# ------------------- Main Scraping Loop -------------------
+async def main_loop(scraper: StockScraper, bot: TelegramBot):
+    while True:
+        try:
+            new_data = scraper.fetch_data()
+            if scraper.has_changed(new_data):
+                msg = f"Cotizaciones actualizadas: {new_data}"
+                notify("Actualización Bolsa", msg)
+                if app_config.telegram_enabled:
+                    await bot.broadcast(msg)
+        except Exception as e:
+            print(f"Error en el loop principal: {e}")
+        await asyncio.sleep(app_config.interval_minutes * 60)
+
+
+# ------------------- Entry Point -------------------
+def main():
+    scraper = StockScraper()
+    telegram_bot = TelegramBot(token="YOUR_BOT_TOKEN")
+
+    # Hilo para la bandeja del sistema
+    tray_thread = threading.Thread(target=run_tray, daemon=True)
+    tray_thread.start()
+
+    # Hilo para el bot de Telegram
+    bot_thread = threading.Thread(target=telegram_bot.run, daemon=True)
+    bot_thread.start()
+
+    # Bucle principal
+    asyncio.run(main_loop(scraper, telegram_bot))
+
+
+if __name__ == '__main__':
+    main()
+
+
+
+
+/////////////////////////////////////////////////////////////////////////////////////
+
+
+
+import logging
+import asyncio
+from aiogram import Bot, Dispatcher, types
+from aiogram.filters import Command
+from aiogram.types import Message, InlineKeyboardButton, InlineKeyboardMarkup
+from centinela import config
+from centinela.chatbots.chatbot import Chatbot
+
+logging.basicConfig(level=logging.INFO,
+                    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+
+MENSAJE_FIJO = "Opciones disponibles:"
+BANNER_TELEGRAM_ID = "AgACAgQAAxkBAAMTaElcxdIpY-3UdJnFwxc4V_e1KwEAArXFMRvJ5ElSVNaFlbLAShsBAAMCAAN5AAM2BA"
+
+class ChatbotTelegram(Chatbot):
+    def __init__(self, token: str):
+        super().__init__()
+        self._token = token
+        self._bot = Bot(token)
+        self._dp = Dispatcher()
+        self._suscriptores = {}
+        self._keyboard = InlineKeyboardMarkup(
+            inline_keyboard=[[
+                InlineKeyboardButton(text="👍 Suscribirte", callback_data="on"),
+                InlineKeyboardButton(text="👎 Cancelar Suscripción", callback_data="off")
+            ]]
+        )
+        self._task = None  # Aquí guardamos la tarea de polling
+        self._activo = False
+        self._register_handlers()
+
+    def _register_handlers(self):
+        self._dp.message.register(self._handle_on, Command(commands=["on"]))
+        self._dp.message.register(self._handle_off, Command(commands=["off"]))
+        self._dp.message.register(self._handle_help, Command(commands=["help"]))
+        self._dp.message.register(self._handle_echo)
+        self._dp.callback_query.register(self._handle_callback)
+
+    async def _handle_callback(self, query: types.CallbackQuery):
+        if query.data == "on":
+            await self._handle_on(query.message)
+        elif query.data == "off":
+            await self._handle_off(query.message)
+
+    async def _handle_help(self, message: Message):
+        msg = (
+            "AYUDA PARA EL USO DEL CHAT BOT DE CENTINELA:\n"
+            "Pulsa cualquiera de los botones o usa los comandos:\n"
+            "   /on = suscribirte \n"
+            "  /off = cancelar suscripción"
+        )
+        await message.answer(msg)
+        await self._handle_echo(message)
+
+    async def _handle_on(self, message: Message):
+        if message.chat.id not in self._suscriptores:
+            self._suscriptores[message.chat.id] = message.chat.full_name
+            msg = f"Gracias, {message.chat.full_name}, por suscribirte."
+        else:
+            msg = f"{message.chat.full_name}, ya estás suscrito."
+        await message.answer(msg)
+
+    async def _handle_off(self, message: Message):
+        if message.chat.id in self._suscriptores:
+            del self._suscriptores[message.chat.id]
+            msg = f"{message.chat.full_name}, has cancelado tu suscripción."
+        else:
+            msg = f"{message.chat.full_name}, no estás suscrito."
+        await message.answer(msg)
+
+    async def _handle_echo(self, message: Message):
+        await self._bot.delete_message(message.chat.id, message.message_id)
+        await self._bot.send_photo(
+            chat_id=message.chat.id,
+            photo=BANNER_TELEGRAM_ID,
+            caption=MENSAJE_FIJO,
+            reply_markup=self._keyboard
+        )
+
+    async def _polling(self):
+        try:
+            await self._dp.start_polling(self._bot)
+        except Exception as e:
+            logging.error(f"Error en polling: {e}")
+            raise
+
+    async def iniciar(self):
+        if not self._activo:
+            logging.info("Iniciando bot...")
+            self._task = asyncio.create_task(self._polling())
+            self._activo = True
+
+    async def detener(self):
+        if self._activo and self._task:
+            logging.info("Deteniendo bot...")
+            self._task.cancel()
+            try:
+                await self._task
+            except asyncio.CancelledError:
+                logging.info("Tarea cancelada correctamente.")
+            await self._bot.session.close()
+            self._activo = False
+
+    async def enviar_mensaje_usuario(self, chat_id: int, texto: str):
+        await self._bot.send_message(chat_id, texto)
+
+    async def enviar_mensaje_a_suscriptores(self, texto: str, keyboard=False):
+        for chat_id in self._suscriptores:
+            await self.enviar_mensaje_usuario(chat_id, texto)
+            if keyboard:
+                await self._bot.send_message(
+                    chat_id=chat_id,
+                    text=MENSAJE_FIJO,
+                    reply_markup=self._keyboard
+                )
+
+
+
+
+--------------------------------------------------------------
+
+COMO USAR EL BOT DESDE OTRO MÓDULO O INTERFAZ
+Ahora puedes importar y controlar el bot desde otra parte de tu aplicación:
+
+
+# ejemplo_control.py
+import asyncio
+from centinela.chatbots.telegram import ChatbotTelegram  # o desde donde lo hayas definido
+from centinela import config
+
+bot = ChatbotTelegram(config.TOKEN_TELEGRAM)
+
+async def run():
+    await bot.iniciar()
+
+    for i in range(5):
+        await asyncio.sleep(5)
+        await bot.enviar_mensaje_a_suscriptores(f"Mensaje automático {i+1}")
+
+    await bot.detener()
 
 if __name__ == "__main__":
-    app = App("TU_TOKEN_DE_TELEGRAM")
-    app.run()
-```
-En este ejemplo, se crean dos clases: `BotTelegram` y `App`. La clase `BotTelegram` encapsula el estado y los métodos del bot de Telegram, mientras que la clase `App` representa el programa principal Icon que se aloja en la bandeja del sistema y gestiona el bot. El objeto `bot` es un atributo de la clase `App`.
-
-=================================================================================================================
+    asyncio.run(run())
 
 
+----------------------------------------------------------------------------
 
+🧩 Posible integración en app más grande (como FastAPI)
 
-
-Sí, puedo modificar el código para utilizar el objeto `Dispatcher` en lugar de `executor`. Aquí te muestro cómo podrías modificar el código:
-```
+# app.py
+from fastapi import FastAPI
 import asyncio
-import threading
-from aiogram import Bot, Dispatcher, types
-import pystray
-from pystray import Icon, Menu, MenuItem
-from PIL import Image
-from plyer import notification
+from centinela.chatbots.telegram import ChatbotTelegram
+from centinela import config
 
-# Configuración del bot de Telegram
-API_TOKEN = "TU_TOKEN_DE_TELEGRAM"
+app = FastAPI()
+bot = ChatbotTelegram(config.TOKEN_TELEGRAM)
 
-# Crear el bot y el dispatcher
-bot = Bot(token=API_TOKEN)
-dp = Dispatcher(bot)
-bot_activo = False
-bot_task = None
+@app.on_event("startup")
+async def startup():
+    await bot.iniciar()
 
-# Método para enviar un mensaje a todos los usuarios conectados al bot
-async def enviar_mensaje_a_todos(mensaje):
-    # Obtener la lista de usuarios conectados
-    usuarios = await dp.storage.get_users()
+@app.on_event("shutdown")
+async def shutdown():
+    await bot.detener()
 
-    # Enviar el mensaje a cada usuario
-    for usuario in usuarios:
-        await bot.send_message(usuario.id, mensaje)
-
-# Función para _iniciar_bot el bot
-async def _iniciar_bot():
-    await dp.start_polling(bot)
-
-def run_bot():
-    global bot_task
-    loop = asyncio.new_event_loop()
-    asyncio.set_event_loop(loop)
-    bot_task = loop.create_task(_iniciar_bot())
-    loop.run_forever()
-
-def iniciar_bot_thread():
-    global bot_activo
-    if not bot_activo:
-        threading.Thread(target=run_bot).start()
-        bot_activo = True
-
-# Función para desactivar el bot
-def detener_bot():
-    global bot_activo
-    global bot_task
-    if bot_activo:
-        bot_task.cancel()
-        bot_activo = False
-
-# Función para mostrar notificaciones
-def mostrar_notificacion(titulo, mensaje):
-    notification.notify(
-        title=titulo,
-        message=mensaje,
-        app_name="Mi aplicación",
-        timeout=10
-    )
-
-# Configuración del menú de la bandeja de notificaciones
-def enviar_mensaje(icon):
-    # Invocar al método para enviar un mensaje a todos los usuarios conectados al bot
-    asyncio.run(enviar_mensaje_a_todos("Hola, soy un mensaje desde la bandeja de notificaciones!"))
-
-def activar_bot(icon):
-    iniciar_bot_thread()
-    mostrar_notificacion("Bot activado", "El bot de Telegram ha sido activado")
-    icon.menu = Menu(
-        MenuItem("Desactivar bot", desactivar_bot),
-        MenuItem("Enviar mensaje", enviar_mensaje),
-        MenuItem("Salir", lambda icon: icon.stop())
-    )
-    icon.update_menu()
-
-def desactivar_bot(icon):
-    detener_bot()
-    mostrar_notificacion("Bot desactivado", "El bot de Telegram ha sido desactivado")
-    icon.menu = Menu(
-        MenuItem("Activar bot", activar_bot),
-        MenuItem("Salir", lambda icon: icon.stop())
-    )
-    icon.update_menu()
-
-def crear_menu():
-    return Menu(
-        MenuItem("Activar bot", activar_bot),
-        MenuItem("Salir", lambda icon: icon.stop())
-    )
-
-# Crear la imagen para la bandeja de notificaciones
-image = Image.open("icono.png")
-
-# Crear la aplicación de bandeja de notificaciones
-with Icon("Mi aplicación", image, menu=crear_menu()) as icon:
-    icon.run()
-```
-En este ejemplo, se utiliza el objeto `Dispatcher` para _iniciar_bot el bot y se crea un hilo separado para ejecutar el bucle de eventos de asyncio. Cuando se desactiva el bot, se cancela la tarea de asyncio que ejecuta el bucle de eventos.
+@app.get("/enviar")
+async def enviar():
+    await bot.enviar_mensaje_a_suscriptores("Mensaje desde FastAPI", keyboard=True)
+    return {"status": "ok"}
 
 
+✅ En resumen
+iniciar() lanza el bot sin bloquear el programa.
+detener() detiene de forma controlada.
+Puedes llamar a enviar_mensaje_a_suscriptores() desde cualquier lugar del programa.
+Ya no usas threading, todo es async.
 
-===========================================================================================================================================
-
-Sí, se puede mostrar un popup con un mensaje por pantalla al usuario de la aplicación principal cuando se active y cuando se desactive el bot. Puedes utilizar la biblioteca `plyer` para mostrar notificaciones en la pantalla.
-
-Aquí te muestro cómo podrías agregar notificaciones cuando se active y se desactive el bot:
-```
-import asyncio
-import threading
-from aiogram import Bot, Dispatcher, executor, types
-import pystray
-from pystray import Icon, Menu, MenuItem
-from PIL import Image
-from plyer import notification
-
-# Configuración del bot de Telegram
-API_TOKEN = "TU_TOKEN_DE_TELEGRAM"
-
-# Crear el bot y el dispatcher
-bot = Bot(token=API_TOKEN)
-dp = Dispatcher(bot)
-bot_activo = False
-bot_thread = None
-
-# Método para enviar un mensaje a todos los usuarios conectados al bot
-async def enviar_mensaje_a_todos(mensaje):
-    # Obtener la lista de usuarios conectados
-    usuarios = await dp.storage.get_users()
-
-    # Enviar el mensaje a cada usuario
-    for usuario in usuarios:
-        await bot.send_message(usuario.id, mensaje)
-
-# Función para _iniciar_bot el bot
-def _iniciar_bot():
-    global bot_thread
-    global bot_activo
-    if not bot_activo:
-        bot_thread = threading.Thread(target=lambda: executor.start_polling(dp, skip_updates=True))
-        bot_thread.start()
-        bot_activo = True
-
-# Función para desactivar el bot
-def detener_bot():
-    global bot_activo
-    if bot_activo:
-        executor.stop()
-        bot_thread.join()
-        bot_activo = False
-
-# Función para mostrar notificaciones
-def mostrar_notificacion(titulo, mensaje):
-    notification.notify(
-        title=titulo,
-        message=mensaje,
-        app_name="Mi aplicación",
-        timeout=10
-    )
-
-# Configuración del menú de la bandeja de notificaciones
-def enviar_mensaje(icon):
-    # Invocar al método para enviar un mensaje a todos los usuarios conectados al bot
-    asyncio.run(enviar_mensaje_a_todos("Hola, soy un mensaje desde la bandeja de notificaciones!"))
-
-def activar_bot(icon):
-    _iniciar_bot()
-    mostrar_notificacion("Bot activado", "El bot de Telegram ha sido activado")
-    icon.menu = Menu(
-        MenuItem("Desactivar bot", desactivar_bot),
-        MenuItem("Enviar mensaje", enviar_mensaje),
-        MenuItem("Salir", lambda icon: icon.stop())
-    )
-    icon.update_menu()
-
-def desactivar_bot(icon):
-    detener_bot()
-    mostrar_notificacion("Bot desactivado", "El bot de Telegram ha sido desactivado")
-    icon.menu = Menu(
-        MenuItem("Activar bot", activar_bot),
-        MenuItem("Salir", lambda icon: icon.stop())
-    )
-    icon.update_menu()
-
-def crear_menu():
-    return Menu(
-        MenuItem("Activar bot", activar_bot),
-        MenuItem("Salir", lambda icon: icon.stop())
-    )
-
-# Crear la imagen para la bandeja de notificaciones
-image = Image.open("icono.png")
-
-# Crear la aplicación de bandeja de notificaciones
-with Icon("Mi aplicación", image, menu=crear_menu()) as icon:
-    icon.run()
-```
-En este ejemplo, se agrega la función `mostrar_notificacion` que utiliza la biblioteca `plyer` para mostrar notificaciones en la pantalla. Cuando se active o se desactive el bot, se llama a esta función para mostrar una notificación con un mensaje correspondiente.
-
-Recuerda instalar la biblioteca `plyer` utilizando pip: `pip install plyer`

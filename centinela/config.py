@@ -64,4 +64,5 @@ LOGO_ACTIVO = Image.open(os.path.join(carpeta, r"images\ojo_abierto.png"))
 LOGO_INACTIVO = Image.open(os.path.join(carpeta, r"images\ojo_cerrado.png"))
 ICONO_ACTIVO_FICH = os.path.join(carpeta, r"images\ojo_abierto.ico")
 TOKEN_TELEGRAM = _get_clave("token")
+print(f"{TOKEN_TELEGRAM=}")
 CENTINELA_LINK = "https://t.me/Centinela_autobot"
