@@ -9,8 +9,7 @@ from aiogram.types import InlineKeyboardButton, InlineKeyboardMarkup
 from centinela import config
 from centinela.chatbots.chatbot import Chatbot
 
-logging.basicConfig(level=logging.INFO,
-                    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+logger = logging.getLogger(__name__)
 
 MENSAJE_FIJO = "Opciones disponibles:"
 BANNER_TELEGRAM_ID = "AgACAgQAAxkBAAMTaElcxdIpY-3UdJnFwxc4V_e1KwEAArXFMRvJ5ElSVNaFlbLAShsBAAMCAAN5AAM2BA"
@@ -54,11 +53,11 @@ class ChatbotTelegram(Chatbot):
         if query.data == "off":
             self._handle_off(query.message)
 
-    async def _handle_start(self, message: Message):
+    def _handle_start(self, message: Message):
         """Callbacks para recoger el comando /start"""
         print("_handle_start")
         # self._iniciar_bot()
-        await self.activar()
+        self.activar()
 
 
     def _handle_help(self, message: Message):
@@ -116,7 +115,7 @@ class ChatbotTelegram(Chatbot):
     def _iniciar_bot(self):
         try:
             print("Iniciando Bot (aiogram) --- start polling")
-            asyncio.run(self._dp.start_polling(self._bot, skip_updates=True))
+            self._dp.start_polling(self._bot, skip_updates=True)
             print("... después de start polling")
 
         except Exception as e:
@@ -133,11 +132,11 @@ class ChatbotTelegram(Chatbot):
     #     self._task = loop.create_task(self._iniciar_bot())
     #     loop.run_forever()
 
-    def activar(self):
+    async def activar(self):
         print(f"activar() -- {self._activo=}")
         if not self._activo:
             # self._task = asyncio.create_task(self._iniciar_bot())
-            self._iniciar_bot()
+            await self._dp.start_polling(self._bot, skip_updates=True)
             self._activo = True
 
     def desactivar(self):
@@ -150,6 +149,7 @@ class ChatbotTelegram(Chatbot):
             # except asyncio.CancelledError:
             #     logging.info("Tarea cancelada correctamente...")
             self._bot.session.close()
+            self._dp.stop_polling()
             self._activo = False
             print("Bot detenido.")
 
@@ -188,23 +188,23 @@ if __name__ == '__main__':
     #     logging.error(f"Error en el bot: {ex}")
     #     raise
 
-    async def main():
+    def main():
         bot = ChatbotTelegram(config.TOKEN_TELEGRAM)
 
         # Tarea 1: iniciar polling del bot
-        await bot.activar()
+        bot.activar()
 
         valor = "99"
         # Tarea 2: lógica adicional (por ejemplo, enviar mensajes periódicos)
         while valor > "0":
-            await asyncio.sleep(10)
+            asyncio.sleep(10)
             msg = "🔔 Este es un mensaje automático para los suscriptores."
-            await bot.enviar_mensaje_a_suscriptores(msg, keyboard=True)
+            bot.enviar_mensaje_a_suscriptores(msg, keyboard=True)
             valor = input("Valor...(0 = fin): ")
 
 
     try:
-        asyncio.run(main())
+        main()
 
     except KeyboardInterrupt:
         print("Bot detenido por el usuario...")

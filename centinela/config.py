@@ -1,13 +1,14 @@
 import os
 import pathlib
-
+import logging
 import dotenv
 import keyring
 
-from os import getenv
 from dotenv import load_dotenv
 from enum import IntEnum
 from PIL import Image
+from colorama import init, Fore, Style
+from pathlib import Path
 
 
 class Notificaciones(IntEnum):
@@ -49,6 +50,8 @@ URL_ISPHANYA = "https://www.verkami.com/projects/40960-isphanya"
 URL_MORTADELO = ("https://www.verkami.com/projects/40554-mortadelo-multiverso-el-"
                  "juego-de-cartas-que-salvara-el-universo-a-mamporro-limpio")
 FICHERO_EXCEL_DATOS = "Datos_Centinela.xlsx"
+FICHERO_LOG = r"logs\centinela.log"
+
 
 # Valores iniciales por defecto
 app_activada = True
@@ -64,5 +67,54 @@ LOGO_ACTIVO = Image.open(os.path.join(carpeta, r"images\ojo_abierto.png"))
 LOGO_INACTIVO = Image.open(os.path.join(carpeta, r"images\ojo_cerrado.png"))
 ICONO_ACTIVO_FICH = os.path.join(carpeta, r"images\ojo_abierto.ico")
 TOKEN_TELEGRAM = _get_clave("token")
-print(f"{TOKEN_TELEGRAM=}")
 CENTINELA_LINK = "https://t.me/Centinela_autobot"
+
+
+NIVEL_LOG = logging.DEBUG
+
+class FormatoColoreado(logging.Formatter):
+    COLOR_MAP = {
+        logging.DEBUG: Fore.CYAN,
+        logging.INFO: Fore.GREEN,
+        logging.WARNING: Fore.YELLOW,
+        logging.ERROR: Fore.RED,
+        logging.CRITICAL: Fore.RED + Style.BRIGHT,
+    }
+
+    def format(self, record):
+        color = self.COLOR_MAP.get(record.levelno, "")
+        reset = Style.RESET_ALL
+        original = super().format(record)
+        return f"{color}{original}{reset}"
+
+def configurar_logging():
+    logger = logging.getLogger()
+    logger.setLevel(NIVEL_LOG)
+
+    # Crea carpeta de logs si no existe
+    Path(FICHERO_LOG).parent.mkdir(parents=True, exist_ok=True)
+
+    # -------- Handler para consola con color --------
+    consola = logging.StreamHandler()
+    consola.setLevel(NIVEL_LOG)
+    consola.setFormatter(FormatoColoreado(
+        fmt='%(asctime)s | %(levelname)-8s | %(name)s | %(message)s',
+        datefmt='%H:%M:%S'
+    ))
+
+    # -------- Handler para archivo sin color --------
+    archivo = logging.FileHandler(Path(FICHERO_LOG), mode='a', encoding='utf-8')
+    archivo.setLevel(NIVEL_LOG)
+    archivo.setFormatter(logging.Formatter(
+        fmt='%(asctime)s | %(levelname)-8s | %(name)s | %(message)s',
+        datefmt='%Y-%m-%d %H:%M:%S'
+    ))
+
+    # Limpia handlers previos
+    if logger.hasHandlers():
+        logger.handlers.clear()
+
+    logger.addHandler(consola)
+    logger.addHandler(archivo)
+
+

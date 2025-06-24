@@ -2,6 +2,7 @@ import dataclasses
 import os
 import winotify
 import pandas as pd
+import logging
 
 from typing import Type
 from copy import copy
@@ -13,6 +14,10 @@ from pandas.errors import DataError
 
 from centinela import tools, config
 from centinela.chatbots.chatbot import Chatbot
+
+
+logger = logging.getLogger(__name__)
+
 
 cols = {
     "ti": "Titulo",         # Un nombre diferenciador para mostrar
@@ -228,8 +233,8 @@ class DatosPersistentes:
             print(f"{self._bot=}")
             if self._bot:
                 print(f"{self._bot.esta_activo=}")
-                if self._bot.esta_activo:
-                    await self._bot.enviar_mensaje_a_suscriptores(texto=msg, keyboard=True)
+                # if self._bot.esta_activo:
+                await self._bot.enviar_mensaje_a_suscriptores(texto=msg, keyboard=True)
 
         print(f"Lectura de datos desde: {self.lectura_nueva.titulo}  -->>  {self.lectura_nueva.fecha}  ({config.tupla_intervalo_activo[0]})")
         # print(f"mostrar_datos() (formato 'a' ) -->> \n{self.get_salida_tabulada("a")}\n" + "-" * 104 + "\n")

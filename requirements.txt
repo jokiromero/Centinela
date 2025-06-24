@@ -16,3 +16,7 @@ aiogram~=3.20.0.post0
 dotenv~=0.9.9
 python-dotenv~=1.1.0
 keyring~=25.6.0
+
+colorama~=0.4.6
+plyer~=2.1.0
+Faker~=37.3.0

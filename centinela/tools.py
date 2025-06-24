@@ -5,6 +5,7 @@ import winotify
 import openpyxl
 import openpyxl.utils
 import pandas as pd
+import logging
 
 from os import PathLike
 
@@ -14,6 +15,9 @@ from gtts import gTTS
 from openpyxl.styles import Alignment, Font, PatternFill
 
 from centinela import config
+
+
+logger = logging.getLogger(__name__)
 
 bloqueo_hablar = Lock()
 

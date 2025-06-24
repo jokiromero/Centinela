@@ -1,7 +1,10 @@
+import logging
+
 from abc import ABCMeta, abstractmethod
 from typing import Any
 from datetime import datetime
 
+logger = logging.getLogger(__name__)
 
 class Scrapper(metaclass=ABCMeta):
     """

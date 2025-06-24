@@ -1,8 +1,10 @@
 import random
+import logging
 
 from centinela.datos_persistentes import Lectura
 from scrappers.scrapper import Scrapper
 
+logger = logging.getLogger(__name__)
 
 class ScrapperRandom(Scrapper):
     """
