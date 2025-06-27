@@ -14,6 +14,11 @@ logger = logging.getLogger(__name__)
 MENSAJE_FIJO = "Opciones disponibles:"
 BANNER_TELEGRAM_ID = "AgACAgQAAxkBAAMTaElcxdIpY-3UdJnFwxc4V_e1KwEAArXFMRvJ5ElSVNaFlbLAShsBAAMCAAN5AAM2BA"
 
+MENSAJE_PRUEBA = """
+<p style='font-size: 18px; font-family: Courrier;'>
+Prueba de mensaje realizado en HTML formateado para probar cómo funciona esto con el bot de Telegram...
+</p>
+"""
 
 class ChatbotTelegram(Chatbot):
     def _inicializar(self, token: str) -> None:
@@ -105,6 +110,8 @@ class ChatbotTelegram(Chatbot):
             caption=MENSAJE_FIJO,
             reply_markup=self._keyboard
         )
+        await self._bot.send_message(chat_id=message.chat.id, text=MENSAJE_PRUEBA,
+                                     parse_mode="html")
 
         # if message.photo:
         #     # Para obtener el id de una foto
