@@ -15,9 +15,9 @@ MENSAJE_FIJO = "Opciones disponibles:"
 BANNER_TELEGRAM_ID = "AgACAgQAAxkBAAMTaElcxdIpY-3UdJnFwxc4V_e1KwEAArXFMRvJ5ElSVNaFlbLAShsBAAMCAAN5AAM2BA"
 
 MENSAJE_PRUEBA = """
-<p style='font-size: 18px; font-family: Courrier;'>
+<b>
 Prueba de mensaje realizado en HTML formateado para probar cómo funciona esto con el bot de Telegram...
-</p>
+</b>
 """
 
 class ChatbotTelegram(Chatbot):
