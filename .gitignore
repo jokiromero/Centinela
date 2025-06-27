@@ -1,9 +1,8 @@
 __pycache__/
 .idea/
 *.pyc
-notes/
-notes/NOTAS.md
-centinela/Datos_Centinela.xlsx
+*.xlsx
+centinela/*.xlsx
 .venv/
 venv/
 .env
