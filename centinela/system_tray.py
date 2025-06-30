@@ -10,10 +10,9 @@ import tools
 from PIL import ImageFile
 from pystray import Icon, Menu, MenuItem
 
-from chatbots.chatbot import Chatbot
-from datos_persistentes import DatosPersistentes
-from scrappers.scrapper import Scrapper
-
+from centinela.chatbots import Chatbot
+from centinela.persistencia import Persistencia
+from centinela.scrappers.scrapper import Scrapper
 
 logger = logging.getLogger(__name__)
 
@@ -22,11 +21,11 @@ def _async_menu_wrapper(coroutine_func, loop: asyncio.AbstractEventLoop, *args, 
     """
         Devuelve un callback síncrono para pystray que ejecuta una función async en el event loop dado.
 
-        :param coroutine_func: función async a ejecutar.
-        :param loop: instancia de asyncio.AbstractEventLoop.
-        :param args: argumentos posicionales para la función async.
-        :param kwargs: argumentos nombrados para la función async.
-        :return: función síncrona que puede usarse como callback de menú.
+        :param coroutine_func: Función asíncrona a ejecutar.
+        :param loop: Instancia de asyncio. AbstractEventLoop.
+        :param args: Argumentos posicionales para la función async.
+        :param kwargs: Argumentos nombrados para la función async.
+        :return: Función síncrona que puede usarse como callback de menú.
     """
 
     def callback(icon=None, item=None):
@@ -38,11 +37,11 @@ def _async_menu_wrapper(coroutine_func, loop: asyncio.AbstractEventLoop, *args, 
 
 
 
-class Centinela:
+class CentinelaSystemTray:
     def __init__(
             self,
             app_nombre: str,
-            data: DatosPersistentes | None = None,
+            data: Persistencia | None = None,
             scrap: Scrapper | None = None,
             bot: Chatbot | None = None,
             loop: asyncio.AbstractEventLoop | None = None
@@ -100,7 +99,7 @@ class Centinela:
                      checked=lambda item: i[4] == config.tupla_intervalo_activo[0]),
         ])
         submenu_notificar = Menu(*[
-            MenuItem(text="Sólo cambios de datos_nuevos", radio=True,
+            MenuItem(text="Solo cambios de datos_nuevos", radio=True,
                      action=lambda icon: self.accion_fijar_notificaciones(
                          icon, valor=config.Notificaciones.SOLO_CAMBIOS),
                      checked=lambda item: config.tipo_notificaciones_activo == 0),
@@ -108,6 +107,9 @@ class Centinela:
                      action=lambda icon: self.accion_fijar_notificaciones(
                          icon, valor=config.Notificaciones.TODOS_LOS_INTERVALOS),
                      checked=lambda item: config.tipo_notificaciones_activo == 1),
+            MenuItem(text=f"Activar ChatBot de {self._bot.nombre}", radio=True,
+                     action=_async_menu_wrapper(self.accion_activar_bot, self._loop),
+                     checked=lambda item: self._bot.esta_activo),
             Menu.SEPARATOR,
             MenuItem(text="Con voz", action=self.accion_activar_voz,
                      checked=lambda item: self._con_voz_activada),
@@ -174,11 +176,29 @@ class Centinela:
         self._system_tray.menu = self._get_menu()
         self._system_tray.update_menu()
 
+    # noinspection SpellCheckingInspection
+    async def accion_activar_bot(self):
+        print(f">>> {self._bot=}  --  {self._bot.esta_activo=}")
+        if self._bot:
+            if self._bot.esta_activo:
+                self._bot.esta_activo = False
+                await self._bot.enviar_mensaje_a_suscriptores(
+                    texto= "❌ Centinela <b>ha pausado</b> el envío de notificaciones a este Chatbot",
+                    parse_mode="HTML"
+                )
+            else:
+                self._bot.esta_activo = True
+                await self._bot.enviar_mensaje_a_suscriptores(
+                    texto="✅ Centinela <b>ha vuelto a actviar</b> el envío de notificaciones a este Chatbot",
+                    parse_mode="HTML"
+            )
+
+
     async def repetir_mostrar(self):
         await self._data.mostrar_datos(es_una_repeticion=True, con_voz=self._con_voz_activada)
 
     # noinspection SpellCheckingInspection
-    def accion_salir(self):
+    async def accion_salir(self):
         # Cancelar tareas async
         if self._task_bot and not self._task_bot.done():
             self._task_bot.cancel()
@@ -188,7 +208,7 @@ class Centinela:
 
         # Detener bot si tiene lógica de cierre
         if self._bot:
-            self._bot.desactivar()
+            await self._bot.parar()
 
         # Detener el icono de sistema
         self._system_tray.stop()

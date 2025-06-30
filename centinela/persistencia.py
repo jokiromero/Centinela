@@ -1,20 +1,25 @@
+import asyncio
 import dataclasses
 import os
 import winotify
 import pandas as pd
 import logging
 
+from aiogram.enums import parse_mode, ParseMode
+
+from centinela.data_box import DataBox, DataBoxVerkami
+
 from typing import Type
 from copy import copy
 from dataclasses import dataclass, asdict, fields
 from datetime import datetime
-from typing import Literal
 from num2words import num2words
 from pandas.errors import DataError
 
 from centinela import tools, config
-from centinela.chatbots.chatbot import Chatbot
-
+from centinela.chatbots import Chatbot
+from scrappers.scrapper import Scrapper
+from scrappers.scrapper_random import ScrapperRandom
 
 logger = logging.getLogger(__name__)
 
@@ -30,8 +35,10 @@ cols = {
 }
 
 
+# noinspection DuplicatedCode
 @dataclass
 class Lectura:
+    # noinspection DuplicatedCode
     titulo: str = ""
     fecha: str = ""
     restante: int = 0
@@ -50,18 +57,19 @@ class Lectura:
         self.fecha = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
 
 
-class DatosPersistentes:
+class Persistencia:
     def __init__(self, nombre_fichero: str | os.PathLike = "",
-                 clase_dato: Type=Lectura,
+                 clase_dato: Type=DataBox.Datos,
                  bot: Chatbot | None=None):
         self._df = None  # DataFrame
         self._bot = bot
         if not dataclasses.is_dataclass(clase_dato):
-            raise TypeError("Se esperaba una clase de tipo 'Dataclass'...")
+            raise TypeError(f"Se esperaba una clase de tipo '{clase_dato}'(Dataclass) y se ha recibido "
+                            f"una clase de tipo '{clase_dato.__name__}'")
 
         self._clase_dato = clase_dato
-        self._lectura_anterior: Lectura = Lectura()
-        self._lectura_nueva: Lectura = Lectura()
+        self._lectura_anterior: DataBoxVerkami = DataBoxVerkami()
+        self._lectura_nueva: DataBoxVerkami = DataBoxVerkami()
         if nombre_fichero:
             self._fichero = os.path.join(os.getcwd(), nombre_fichero)
         else:
@@ -76,22 +84,25 @@ class DatosPersistentes:
                 if self._df.shape[0] == 0:
                     raise ValueError(f"Fichero vacío '{self._fichero}'")
 
+                # Ordenar por fecha y tomar la última fila
                 self._df.sort_values(by=cols["f"], inplace=True)
-                self._lectura_anterior = Lectura(
-                    titulo=self._df.iloc[-1][cols["ti"]],
-                    fecha=self._df.iloc[-1][cols["f"]],
-                    restante=self._df.iloc[-1][cols["r"]],
-                    unidades=self._df.iloc[-1][cols["u"]],
-                    aportaciones=self._df.iloc[-1][cols["a"]],
-                    objetivo=self._df.iloc[-1][cols["o"]],
-                    total=self._df.iloc[-1][cols["t"]],
-                )
+                fila = self._df.iloc[-1]
 
+                d = self.lectura_nueva
+
+                self._lectura_anterior.datos.titulo = fila[d.col("Ti")]
+                self._lectura_anterior.datos.fecha = fila[d.col("F")]
+                self._lectura_anterior.datos.restante = fila[d.col("R")]
+                self._lectura_anterior.datos.unidades = fila[d.col("U")]
+                self._lectura_anterior.datos.aportaciones = fila[d.col("A")]
+                self._lectura_anterior.datos.objetivo = fila[d.col("O")]
+                self._lectura_anterior.datos.total = fila[d.col("T")]
 
 
     def _validar_campos(self) -> bool:
         # Campos definidos en la dataclass
-        campos_lectura = {campo.name for campo in fields(self._clase_dato)}
+        # campos_lectura = {campo.name for campo in fields(self._clase_dato)}
+        campos_lectura = {campo.name for campo in fields(self._lectura_nueva.datos)}
 
         # Columnas del DataFrame
         campos_df = set(
@@ -120,94 +131,48 @@ class DatosPersistentes:
     def datos_cambiados(self) -> bool:
         ret = False
         if (
-                self.lectura_anterior.titulo != self.lectura_nueva.titulo
-                or (self.lectura_anterior.fecha == "" and self.lectura_nueva.fecha != "")
-                or self.lectura_anterior.total != self.lectura_nueva.total
+                self.lectura_anterior.datos.titulo != self.lectura_nueva.datos.titulo
+                or (self.lectura_anterior.datos.fecha == "" and self.lectura_nueva.datos.fecha != "")
+                or self.lectura_anterior.datos.total != self.lectura_nueva.datos.total
         ):
             ret = True
 
         return ret
 
     @property
-    def lectura_nueva(self) -> Lectura:
+    def lectura_nueva(self) -> DataBoxVerkami:
         return self._lectura_nueva
 
     @lectura_nueva.setter
-    def lectura_nueva(self, datos_nuevos: Lectura):
+    def lectura_nueva(self, datos_nuevos: DataBoxVerkami):
         # Antes sustituir la lectura nueva, saca una copia como lectura anterior
         self._lectura_anterior = copy(self.lectura_nueva)
         # Y ahora puede ya machacarla con el nuevo valor recién leído
         self._lectura_nueva = copy(datos_nuevos)
 
-        if not self._lectura_nueva.fecha:
-            self._lectura_nueva.set_fecha()
+        if not self._lectura_nueva.datos.fecha:
+            self._lectura_nueva.datos.set_fecha()
 
         if self.datos_cambiados:
-            # print("lectura_nueva() ha detectado que los datos_web han cambiado...")
-            d = asdict(datos_nuevos)
+            d = asdict(datos_nuevos.datos)
             for clave in list(d.keys()):
                 d[clave.capitalize()] = d.pop(clave)
             nueva_fila = pd.DataFrame(d, index=[0])
             self._df = pd.concat(objs=[self._df, nueva_fila], ignore_index=True)
 
-            # ---------------- GUARDAR FICHERO
+            # Persistencia de datos en fichero Excel
             if self._fichero:
                 df = self._df.copy()
                 df.columns = [col.capitalize() for col in df.columns]
                 tools.exportar_excel(fich=self._fichero, data={"Hoja1": df})
 
     @property
-    def lectura_anterior(self) -> Lectura | None:
+    def lectura_anterior(self) -> DataBoxVerkami | None:
         if self._lectura_anterior:
             return self._lectura_anterior
         else:
             return None
 
-    def get_salida_tabulada(self, formato: Literal["a", "b", "c", "ab"]) -> str:
-        def _formato_a(lec: Lectura) -> str:
-            df = pd.DataFrame(asdict(lec), index=[0])
-            return df.to_string(index=False)
-
-        def _formato_ab(lec: Lectura) -> str:
-            df = pd.DataFrame(asdict(lec), index=[0])
-            linea1 = "\n" + df[["titulo", "fecha", "objetivo"]].to_string(index=False)
-            linea2 = "\n" + df[["restante", "unidades", "aportaciones", "total"]].to_string(index=False)
-            largo = int(max(len(linea1), len(linea2)) / 2)
-            rayas = "\n" + "-" * largo
-            fmt = linea1 + rayas + linea2 + rayas
-            return fmt
-
-        def _formato_b(lec: Lectura) -> str:
-            fmt = f"{lec.titulo:28}\n"
-            fmt += f"{lec.unidades:18} = {lec.restante:8d}\n"
-            fmt += f"{cols['a']:18} = {lec.aportaciones:8d}\n"
-            fmt += f"{cols['o']:18} = {lec.objetivo:11,.2f} €\n"
-            fmt += f"{cols['t']:18} = {lec.total:11,.2f} €"
-            return fmt
-
-        def _formato_c(lec: Lectura) -> str:
-            promedio = 0
-            if lec.aportaciones != 0:
-                promedio = lec.total / lec.aportaciones
-
-            fmt = f"{lec.titulo:28}\n"
-            fmt += f"{lec.restante} {lec.unidades}.  {cols['o'][:3]}: {lec.objetivo:7,.0f} €\n"
-            fmt += f"{lec.aportaciones} {cols['a'][:5]}. {cols['t']}: {lec.total:7,.0f} €\n"
-            fmt += f"({promedio:,.0f} € promedio por aport.)"
-            return fmt
-
-        salida = ""
-
-        if formato == "a":
-            salida = _formato_a(self.lectura_nueva)
-        elif formato == "b":
-            salida = _formato_b(self.lectura_nueva)
-        elif formato == "c":
-            salida = _formato_c(self.lectura_nueva)
-        elif formato == "ab":
-            salida = _formato_ab(self.lectura_nueva)
-
-        return salida
 
     async def mostrar_datos(self, es_una_repeticion=False, con_voz=False):
         if ((config.tipo_notificaciones_activo == config.Notificaciones.TODOS_LOS_INTERVALOS or
@@ -220,22 +185,68 @@ class DatosPersistentes:
                 titulo2 = "... (sin cambios)"
                 melodia = winotify.audio.LoopingCall2
 
-            numero = num2words(number=self.lectura_nueva.total, lang="es")
+            numero = num2words(number=self.lectura_nueva.datos.total, lang="es")
             msg_voz = f"Atención: se ha alcanzado un total de {numero} euros"
             print(f"mostrar_datos() >> {con_voz=}")
-            msg = self.get_salida_tabulada(formato="c")
+            msg = self.lectura_nueva.salida_formateada_str(formato="c")
             tools.mostrar_notificacion(
-                titulo=self.lectura_nueva.fecha + titulo2,
+                titulo=self.lectura_nueva.datos.fecha + titulo2,
                 msg=msg,
                 msg_hablado=msg_voz if con_voz else "",
                 sonido=melodia
             )
-            print(f"{self._bot=}")
+            print(f"{self._bot=}  --- {self._bot.esta_activo=}")
             if self._bot:
-                print(f"{self._bot.esta_activo=}")
-                # if self._bot.esta_activo:
-                await self._bot.enviar_mensaje_a_suscriptores(texto=msg, keyboard=True)
+                if self._bot.esta_activo:
+                    await self._bot.enviar_mensaje_a_suscriptores(
+                        texto=msg, keyboard=True, parse_mode=ParseMode.HTML
+                    )
 
-        print(f"Lectura de datos desde: {self.lectura_nueva.titulo}  -->>  {self.lectura_nueva.fecha}  ({config.tupla_intervalo_activo[0]})")
+        logger.info(f"Lectura de datos desde: {self.lectura_nueva.datos.titulo}  -->>  {self.lectura_nueva.datos.fecha}  ({config.tupla_intervalo_activo[0]})")
         # print(f"mostrar_datos() (formato 'a' ) -->> \n{self.get_salida_tabulada("a")}\n" + "-" * 104 + "\n")
-        print(f"mostrar_datos() (formato 'ab') -->> \n{self.get_salida_tabulada("ab")}\n")
+        logger.info(f"mostrar_datos() (formato 'ab') -->> \n{self.lectura_nueva.salida_formateada_str("ab")}\n")
+
+
+
+if __name__ == "__main__":
+    # Pruebas del módulo
+    config.configurar_logging()
+
+    p = Persistencia(config.FICHERO_EXCEL_DATOS, DataBox.Datos)
+    datos = p.lectura_nueva.datos
+    datos.titulo = "Prueba de valores"
+    datos.set_fecha()
+    datos.objetivo = 32000
+    datos.restante = 12
+    datos.aportaciones = 133
+    datos.total = 35100.00
+
+    print(p.datos_cambiados)
+    print(asyncio.run(p.mostrar_datos()))
+
+    s = ScrapperRandom("Datos de prueba sintéticos")
+
+    datos = p.lectura_nueva.datos
+    print(p.datos_cambiados)
+    print(asyncio.run(p.mostrar_datos()))
+
+    # datos = p.lectura_nueva.datos
+    # print(p.datos_cambiados)
+    # print(asyncio.run(p.mostrar_datos()))
+    #
+    # datos = p.lectura_nueva.datos
+    # print(p.datos_cambiados)
+    # print(asyncio.run(p.mostrar_datos()))
+    #
+    # datos = p.lectura_nueva.datos
+    # print(p.datos_cambiados)
+    # print(asyncio.run(p.mostrar_datos()))
+    #
+    # datos = p.lectura_nueva.datos
+    # print(p.datos_cambiados)
+    # print(asyncio.run(p.mostrar_datos()))
+    #
+    # datos = p.lectura_nueva.datos
+    # print(p.datos_cambiados)
+    # print(asyncio.run(p.mostrar_datos()))
+

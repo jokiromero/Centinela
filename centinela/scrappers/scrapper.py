@@ -1,12 +1,12 @@
 import logging
 
-from abc import ABCMeta, abstractmethod
+from abc import ABC, abstractmethod
 from typing import Any
 from datetime import datetime
 
 logger = logging.getLogger(__name__)
 
-class Scrapper(metaclass=ABCMeta):
+class Scrapper(ABC):
     """
     Clase abstracta Scrapper.
     Define el comportamiento genérico de un objeto Scrapper

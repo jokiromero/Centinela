@@ -1,0 +1,25 @@
+[[source]]
+url = "https://pypi.org/simple"
+verify_ssl = true
+name = "pypi"
+
+[packages]
+beautifulsoup4 = "==4.13.4"
+gtts = "==2.5.4"
+pillow = "==11.2.1"
+pyglet = "==2.1.6"
+pystray = "==0.19.5"
+requests = "==2.32.3"
+winotify = "==1.1.0"
+pandas = "~=2.2.3"
+openpyxl = "~=3.1.5"
+dataclasses = "~=0.6"
+num2words = "~=0.5.14"
+faker = "~=37.3.0"
+keyring = "~=25.6.0"
+
+[dev-packages]
+
+[requires]
+python_version = "3.12"
+python_full_version = "3.12.7"

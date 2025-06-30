@@ -2,8 +2,8 @@ import requests
 import logging
 
 from bs4 import BeautifulSoup
-from centinela.datos_persistentes import Lectura
-from scrappers.scrapper import Scrapper
+from centinela.persistencia import Lectura
+from centinela.scrappers.scrapper import Scrapper
 
 
 logger = logging.getLogger(__name__)
