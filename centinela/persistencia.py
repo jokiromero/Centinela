@@ -5,14 +5,13 @@ import winotify
 import pandas as pd
 import logging
 
-from aiogram.enums import parse_mode, ParseMode
+from aiogram.enums import ParseMode
 
 from centinela.data_box import DataBox, DataBoxVerkami
 
 from typing import Type
 from copy import copy
-from dataclasses import dataclass, asdict, fields
-from datetime import datetime
+from dataclasses import asdict, fields
 from num2words import num2words
 from pandas.errors import DataError
 
@@ -35,41 +34,41 @@ cols = {
 }
 
 
-# noinspection DuplicatedCode
-@dataclass
-class Lectura:
-    # noinspection DuplicatedCode
-    titulo: str = ""
-    fecha: str = ""
-    restante: int = 0
-    unidades: str = ""
-    aportaciones: int = 0
-    objetivo: float = 0
-    total: float = 0
+# # noinspection DuplicatedCode
+# @dataclass
+# class Lectura:
+#     # noinspection DuplicatedCode
+#     titulo: str = ""
+#     fecha: str = ""
+#     restante: int = 0
+#     unidades: str = ""
+#     aportaciones: int = 0
+#     objetivo: float = 0
+#     total: float = 0
+#
+#     def get_fecha_datetime(self) -> datetime:
+#         ret = None
+#         if self.fecha:
+#             ret = datetime.strptime(self.fecha, "%Y-%m-%d %H:%M:%S")
+#         return ret
+#
+#     def set_fecha(self) -> None:
+#         self.fecha = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+#
 
-    def get_fecha_datetime(self) -> datetime:
-        ret = None
-        if self.fecha:
-            ret = datetime.strptime(self.fecha, "%Y-%m-%d %H:%M:%S")
-        return ret
-
-    def set_fecha(self) -> None:
-        self.fecha = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-
-
+# noinspection SpellCheckingInspection
 class Persistencia:
-    def __init__(self, nombre_fichero: str | os.PathLike = "",
-                 clase_dato: Type=DataBox.Datos,
+    def __init__(self, clase_databox: Type[DataBox],
+                 nombre_fichero: str | os.PathLike = "",
                  bot: Chatbot | None=None):
         self._df = None  # DataFrame
         self._bot = bot
-        if not dataclasses.is_dataclass(clase_dato):
-            raise TypeError(f"Se esperaba una clase de tipo '{clase_dato}'(Dataclass) y se ha recibido "
-                            f"una clase de tipo '{clase_dato.__name__}'")
-
-        self._clase_dato = clase_dato
-        self._lectura_anterior: DataBoxVerkami = DataBoxVerkami()
-        self._lectura_nueva: DataBoxVerkami = DataBoxVerkami()
+        if not dataclasses.is_dataclass(clase_databox):
+            raise TypeError(f"Se esperaba una clase de tipo '{clase_databox}'(Dataclass) y se ha recibido "
+                            f"una clase de tipo '{clase_databox.__name__}'")
+        self._clase_databox = clase_databox
+        self._lectura_anterior = self._clase_databox()
+        self._lectura_nueva = self._clase_databox()
         if nombre_fichero:
             self._fichero = os.path.join(os.getcwd(), nombre_fichero)
         else:
@@ -101,7 +100,6 @@ class Persistencia:
 
     def _validar_campos(self) -> bool:
         # Campos definidos en la dataclass
-        # campos_lectura = {campo.name for campo in fields(self._clase_dato)}
         campos_lectura = {campo.name for campo in fields(self._lectura_nueva.datos)}
 
         # Columnas del DataFrame
@@ -174,7 +172,7 @@ class Persistencia:
             return None
 
 
-    async def mostrar_datos(self, es_una_repeticion=False, con_voz=False):
+    async def mostrar_datos_old(self, es_una_repeticion=False, con_voz=False):
         if ((config.tipo_notificaciones_activo == config.Notificaciones.TODOS_LOS_INTERVALOS or
              (config.tipo_notificaciones_activo == config.Notificaciones.SOLO_CAMBIOS
               and self.datos_cambiados)) or es_una_repeticion):

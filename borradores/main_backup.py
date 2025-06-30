@@ -38,7 +38,7 @@ async def main():
     scrapper = ScrapperRandom(titulo="Datos sintéticos")
     chatbot = ChatbotTelegram(token=config.TOKEN_TELEGRAM)
     datos_persistentes = Persistencia(
-        config.FICHERO_EXCEL_DATOS, clase_dato=Lectura, bot=chatbot
+        config.FICHERO_EXCEL_DATOS, clase_databox=Lectura, bot=chatbot
     )
 
     centinela_tray = CentinelaSystemTray(

@@ -1,11 +1,11 @@
 import random
 import logging
 
-import centinela.data_box
 from centinela.data_box import DataBox, DataBoxVerkami
 from centinela.scrappers.scrapper import Scrapper
 
 logger = logging.getLogger(__name__)
+
 
 class ScrapperRandom(Scrapper):
     """
@@ -13,32 +13,33 @@ class ScrapperRandom(Scrapper):
     de datos externa. Implementa la interfaz Scrapper.
     """
 
-    def __init__(self, titulo: str, url: str | None = None):
-        super().__init__(titulo, url)
+    def __init__(self, url: str, titulo: str):
+        super().__init__(url=url)
 
         # Probabilidad de que la nueva solicitud de datos devuelva valores diferentes
         # a los generados anteriormente
         self._ratio_valores_nuevos = 0.14
 
         # Valores iniciales - Primera lectura
-        self._lectura = DataBoxVerkami()
-        self._lectura.datos.titulo = titulo
-        self._lectura.datos.restante = random.choices(
+        self._data_box = DataBoxVerkami()
+        self._data_box.datos.titulo = titulo
+        self._data_box.datos.restante = random.choices(
                 population=[2, 8, 10],  weights=[100, 1, 1]            )[0]
-        self._lectura.datos.unidades = "Dias"
-        self._lectura.datos.aportaciones = 0
-        self._lectura.datos.objetivo = random.randint(10, 100) * 1000
-        self._lectura.datos.total = 0
-        self._lectura.datos.set_fecha()
+        self._data_box.datos.unidades = "Dias"
+        self._data_box.datos.aportaciones = 0
+        self._data_box.datos.objetivo = random.randint(10, 100) * 1000
+        self._data_box.datos.total = 0
+        self._data_box.datos.set_fecha()
+
 
     def hemos_terminado(self) -> bool:
-        return self._lectura.datos.restante < 1
+        return self._data_box.datos.restante < 1
 
 
-    def leer_datos(self) -> DataBox:
+    def leer_datos(self) -> DataBoxVerkami:
         if not self.hemos_terminado():
             # Determina si ha de simularse que los datos de origen han cambiado
-            if self._lectura.datos.total == 0:
+            if self._data_box.datos.total == 0:
                 # Fuerza a que la primera vez siempre lea datos nuevos
                 hay_datos_nuevos = True
             else:
@@ -56,29 +57,29 @@ class ScrapperRandom(Scrapper):
                 lectura = DataBoxVerkami()
                 lectura.datos.titulo = self._titulo
                 lectura.datos.set_fecha()
-                lectura.datos.restante = self._lectura.datos.restante - delta_restante
+                lectura.datos.restante = self._data_box.datos.restante - delta_restante
                 lectura.datos.unidades = "Dias"
-                lectura.datos.aportaciones = self._lectura.datos.aportaciones + delta_aportaciones
-                lectura.datos.objetivo = self._lectura.datos.objetivo
-                lectura.datos.total = self._lectura.datos.total + delta_total
-                self._lectura = lectura
+                lectura.datos.aportaciones = self._data_box.datos.aportaciones + delta_aportaciones
+                lectura.datos.objetivo = self._data_box.datos.objetivo
+                lectura.datos.total = self._data_box.datos.total + delta_total
+                self._data_box = lectura
 
                 if self.hemos_terminado():
-                    self._lectura.datos.titulo = self.titulo + "(TERMINADO)"
-                    self._lectura.datos.restante = 0   # para evitar que sea < 0
+                    self._data_box.datos.titulo = self.titulo + "(TERMINADO)"
+                    self._data_box.datos.restante = 0   # para evitar que sea < 0
 
-        return self._lectura
+        return self._data_box
+
 
 
 if __name__ == "__main__":
      # pruebas del módulo
-    def run(scr: Scrapper) -> centinela.data_box.DataBoxVerkami:
+    def run(scr: Scrapper) -> DataBoxVerkami:
         return scr.leer_datos()
     ant = 0
-    s = ScrapperRandom(titulo="Prueba de Random Scrapper", url="none")
+    s = ScrapperRandom(url="ninguna", titulo="Prueba de Random Scrapper")
     for i in range(30):
         databox = run(s)
         nuevos = "Datos nuevos -- " if databox.datos.total != ant else "--------------- "
         print(f"{nuevos}  {i:02} -- {databox.datos}")
         ant = databox.datos.total
-

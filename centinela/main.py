@@ -1,6 +1,5 @@
 import asyncio
 import threading
-import traceback
 
 import config
 import logging
@@ -10,7 +9,7 @@ from centinela.persistencia import Persistencia
 from centinela.scrappers.scrapper import Scrapper
 from centinela.scrappers.scrapper_random import ScrapperRandom
 from centinela.system_tray import CentinelaSystemTray
-from centinela.data_box import DataBox, DataBoxVerkami
+from centinela.data_box import DataBoxVerkami
 
 MENSAJE_FIJO = "Opciones disponibles:"
 BANNER_TELEGRAM_ID = "AgACAgQAAxkBAAMTaElcxdIpY-3UdJnFwxc4V_e1KwEAArXFMRvJ5ElSVNaFlbLAShsBAAMCAAN5AAM2BA"
@@ -25,8 +24,11 @@ async def bucle_principal(
         data: Persistencia
 ):
     while True:
-        data.lectura_nueva = scrap.leer_datos()
-        await data.mostrar_datos(con_voz=config.voz_activada)
+        # data.lectura_nueva = scrap.leer_datos()
+        databox = scrap.leer_datos()
+        # await data.mostrar_datos(con_voz=config.voz_activada)
+        await databox.mostrar_datos(con_voz=config.voz_activada)
+        # actualizar_datos_persistentes
         intervalo = 60 * config.tupla_intervalo_activo[1]
         await asyncio.sleep(intervalo)
 
@@ -37,11 +39,13 @@ async def main():
 
     # scrap=ScrapperVerkami(url=config.URL_ISPHANYA, titulo="Proyecto 'ISPHANYA'"),
     # scrap=ScrapperVerkami(url=config.URL_MORTADELO, titulo="Proyecto Mortadelo"),
-    scrapper = ScrapperRandom(titulo="Datos sintéticos")
     chatbot = ChatbotTelegram(token=config.TOKEN_TELEGRAM)
     datos_persistentes = Persistencia(
-        config.FICHERO_EXCEL_DATOS, clase_dato=DataBoxVerkami.Datos, bot=chatbot
+        clase_databox=DataBoxVerkami,
+        nombre_fichero=config.FICHERO_EXCEL_DATOS,
+        bot=chatbot
     )
+    scrapper = ScrapperRandom(url="ninguna", titulo="Datos sintéticos")
 
     centinela_tray = CentinelaSystemTray(
         app_nombre=config.APP_NOMBRE,
