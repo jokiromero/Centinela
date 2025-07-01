@@ -1,0 +1,20 @@
+from psd_tools import PSDImage
+from PIL import Image
+
+def psd_to_png(psd_path: str, png_path: str):
+    # Cargar el archivo PSD
+    psd = PSDImage.open(psd_path)
+
+    # Renderizar el PSD a una imagen PIL
+    composed_image = psd.composite()
+
+    # Guardar como PNG
+    composed_image.save(png_path, 'PNG')
+    print(f"Imagen convertida: {png_path}")
+
+# Ejemplo de uso
+if __name__ == '__main__':
+    psd_file = 'entrada.psd'     # Reemplaza con tu archivo
+    png_file = 'salida.png'
+    psd_to_png(psd_file, png_file)
+

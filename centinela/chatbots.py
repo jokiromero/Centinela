@@ -130,28 +130,35 @@ class ChatbotTelegram(Chatbot):
 
     async def _handle_on(self, message: Message):
         """Callbacks para recoger el comando /on"""
-        if self.esta_activo:
-            msg_adicional = (f"A partir de ahora, en la sesión actual, recibirás actualizaciones "
-                             f"directamente en este chatbot cada vez que éstas ocurran.\n\n")
-        else:
-            msg_adicional = (f"Lamentablemente, Centinela tiene desactivado en este momento el envío "
-                             f"de notificaciones al chatbot. Cuando se activen de nuevo y si aún estás "
-                             f"suscrito, recibirás actualizaciones directamente en este chat.")
 
         # Añade al chat del usuario a la lista de suscriptores
         if message.chat.id not in self._suscriptores:
             self._suscriptores.add(message.chat.id)
             msg = (f"Muchas gracias, '{message.chat.full_name}' (id={message.chat.id}) "
-                   f"por suscribirte a las notificaciones de Centinela.\n\n"
-                   f"{msg_adicional}\n"
-                   f"💚💚💚 ¡¡Gracias por usar Centinela!! ")
+                   f"por suscribirte a las notificaciones de Centinela.\n\n")
         else:
             msg = (f"{message.chat.full_name}, ya estabas suscrito a las notificaciones de Centinela. "
                    f"No hace falta que hagas nada adicional...\n\n")
-            if not self.esta_activo:
-                msg += msg_adicional
 
-        await message.answer(msg)
+        if self.esta_activo:
+            msg += (f"A partir de ahora y mientras dure la sesión actual, recibirás actualizaciones "
+                    f"directamente en este chatbot cada vez que éstas ocurran.\n\n "
+                    f"💚💚💚 ¡¡Gracias por usar Centinela!!")
+        else:
+            msg +=(f"Lamentablemente, Centinela tiene desactivado en este momento el envío "
+                   f"de notificaciones al chatbot. Cuando se activen de nuevo y si aún estás "
+                   f"suscrito, recibirás actualizaciones directamente en este chat.")
+
+        estado_usuario = "🟢 SUSCRITO" if message.chat.id in self._suscriptores else "🔴 NO SUSCRITO"
+        estado_bot = "✅ ACTIVADO" if self.esta_activo else "❌‍ DESACTIVADO"
+        caption = f"{message.chat.full_name}: {estado_usuario}  >>>  Bot: {estado_bot}"
+        await self._bot.send_photo(
+            chat_id=message.chat.id,
+            photo=BANNER_TELEGRAM_ID,
+            caption=caption,
+            reply_markup=None
+        )
+        await message.answer(msg, reply_markup=self._keyboard)
 
     # noinspection DuplicatedCode
     async def _handle_off(self, message: Message):
@@ -164,7 +171,18 @@ class ChatbotTelegram(Chatbot):
                    f"¡¡Vuelve cuando quieras...!!")
         else:
             msg = f"{msg}: no estás suscrito a las notificaciones de Centinela."
-        await message.answer(msg)
+
+        estado_usuario = "🟢 SUSCRITO" if message.chat.id in self._suscriptores else "🔴 NO SUSCRITO"
+        estado_bot = "✅ ACTIVADO" if self.esta_activo else "❌‍ DESACTIVADO"
+        caption = f"{message.chat.full_name}: {estado_usuario}  >>>  Bot: {estado_bot}"
+        await self._bot.send_photo(
+            chat_id=message.chat.id,
+            photo=BANNER_TELEGRAM_ID,
+            caption=caption,
+            reply_markup=None
+        )
+        await message.answer(msg, reply_markup=self._keyboard)
+
 
     async def _handle_echo(self, message: Message):
         """Callbacks para reaccionar con una respuesta por defecto"""

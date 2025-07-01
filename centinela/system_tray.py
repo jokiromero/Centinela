@@ -118,7 +118,8 @@ class CentinelaSystemTray:
             MenuItem(text="Mostrar última notificación",
                      action=_async_menu_wrapper(self.repetir_mostrar, self._loop)),
             Menu.SEPARATOR,
-            MenuItem(text="Salir", action=self.accion_salir),
+            MenuItem(text="Salir",
+                     action=_async_menu_wrapper(self.accion_salir, self._loop))
         ])
         return menu
 
@@ -185,7 +186,7 @@ class CentinelaSystemTray:
             else:
                 await self._chatbot.activar()
                 await self._chatbot.enviar_mensaje_a_suscriptores(
-                    texto="✅ Centinela <b>ha actiado</b> el envío de notificaciones a este Chatbot",
+                    texto="✅ Centinela <b>ha activado</b> el envío de notificaciones a este Chatbot",
                     parse_mode="HTML"
             )
 
@@ -195,6 +196,7 @@ class CentinelaSystemTray:
 
     # noinspection SpellCheckingInspection
     async def accion_salir(self):
+        # TODO: la salida debería ser "elegante" y no abrupta como ahora
         # Cancelar tareas async
         if self._task_bot and not self._task_bot.done():
             self._task_bot.cancel()

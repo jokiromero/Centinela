@@ -244,11 +244,9 @@ class DataBoxVerkami(DataBox):
             return fmt
 
         def _formato_b(datos: DataBoxVerkami._Datos) -> str:
-            fmt = f"{datos.titulo:28}\n"
-            fmt += f"{datos.unidades:18} = {datos.restante:8d}\n"
-            fmt += f"{self.col('A'):18} = {datos.aportaciones:8d}\n"
-            fmt += f"{self.col('O'):18} = {datos.objetivo:11,.2f} €\n"
-            fmt += f"{self.col('T'):18} = {datos.total:11,.2f} €"
+            fmt = f"{datos.fecha}: {datos.titulo:28}\n"
+            fmt += f"{self.col('O')}: {datos.objetivo:,.0f} €, Quedan {datos.restante:3d} {datos.unidades:18}\n"
+            fmt += f"{self.col('A')}: {datos.aportaciones:4d}, {self.col('T')}: {datos.total:,.2f} €"
             return fmt
 
         def _formato_c(datos: DataBoxVerkami._Datos) -> str:
@@ -286,18 +284,17 @@ class DataBoxVerkami(DataBox):
              (config.tipo_notificaciones_activo == config.Notificaciones.SOLO_CAMBIOS
               and self.datos_cambiados)) or es_una_repeticion):
             if self.datos_cambiados:
-                titulo2 = "... ¡NUEVOS DATOS!"
+                txt_cambiados = "** ¡NUEVOS DATOS! **"
                 melodia = winotify.audio.LoopingAlarm4
             else:
-                titulo2 = "... (sin cambios)"
+                txt_cambiados = "... (sin cambios) ..."
                 melodia = winotify.audio.LoopingCall2
 
             numero = num2words(number=self.datos.total, lang="es")
             msg_voz = f"Atención: se ha alcanzado un total de {numero} euros"
-            print(f"mostrar_datos() >> {con_voz=}")
-            msg = self.salida_formateada_str(formato="c")
+            msg = self.salida_formateada_str(formato="b")
             tools.mostrar_notificacion(
-                titulo=self.datos.fecha + titulo2,
+                titulo=txt_cambiados,
                 msg=msg,
                 msg_hablado=msg_voz if con_voz else "",
                 sonido=melodia
@@ -311,7 +308,7 @@ class DataBoxVerkami(DataBox):
 
         logger.info(
             f"Lectura de datos desde: {self.datos.titulo}  -->>  {self.datos.fecha}  ({config.tupla_intervalo_activo[0]})")
-        # print(f"mostrar_datos() (formato 'a' ) -->> \n{self.get_salida_tabulada("a")}\n" + "-" * 104 + "\n")
+        print(f"mostrar_datos() (formato 'a' ) -->> \n{self.salida_formateada_str("a")}\n" + "-" * 104 + "\n")
         logger.info(f"mostrar_datos() (formato 'ab') -->> \n{self.salida_formateada_str("ab")}\n")
 
 
@@ -329,21 +326,10 @@ if __name__ == "__main__":
         data.datos.total = 125000
         print(data.datos)
 
-        chatbot = ChatbotTelegram(config.TOKEN_TELEGRAM)
-        await chatbot.iniciar()
-        await chatbot.activar()
-        await asyncio.sleep(1)
-        await data.mostrar_datos(chatbot=chatbot)
-        await chatbot.parar()
-
-        # print(data.salida_formateada_str("a"))
-        # print(">>>>>>>>>>>>>>>>>>>>>")
-        # print(data.salida_formateada_str("ab"))
-        # print(">>>>>>>>>>>>>>>>>>>>>")
-        # print(data.salida_formateada_str("b"))
-        # print(">>>>>>>>>>>>>>>>>>>>>")
-        # print(data.salida_formateada_str("c"))
-        # print(">>>>>>>>>>>>>>>>>>>>>")
+        for f in ["a", "b", "c", "ab"]:
+            print(f">> Salida '{f}'" + ("-" * 60))
+            print(data.salida_formateada_str(formato=f))
+            print("")
 
     asyncio.run(main())
 
