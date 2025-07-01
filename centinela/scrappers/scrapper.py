@@ -13,9 +13,10 @@ class Scrapper(ABC):
     un objeto Scrapper capaz de leer datos de cierta url y devolverlos
     mediante 'leer_datos()'
     """
-    def __init__(self, url: str, *args, **kwargs):
+    def __init__(self, url: str, titulo: str, *args, **kwargs):
         self._lectura_nueva: DataBox | None = None
         self._url = url
+        self._titulo = titulo
 
     @abstractmethod
     def hemos_terminado(self) -> bool:
@@ -40,7 +41,3 @@ class Scrapper(ABC):
     def datos(self) -> DataBox._Datos:
         return self._lectura_nueva.datos
 
-
-    @abstractmethod
-    def datos_cambiados(self) -> bool:
-        pass

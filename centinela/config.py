@@ -7,7 +7,7 @@ import keyring
 from dotenv import load_dotenv
 from enum import IntEnum
 from PIL import Image
-from colorama import init, Fore, Style
+from colorama import Fore, Style
 from pathlib import Path
 
 

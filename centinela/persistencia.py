@@ -6,7 +6,6 @@ import pandas as pd
 import logging
 
 from aiogram.enums import ParseMode
-
 from centinela.data_box import DataBox, DataBoxVerkami
 
 from typing import Type
@@ -17,7 +16,6 @@ from pandas.errors import DataError
 
 from centinela import tools, config
 from centinela.chatbots import Chatbot
-from scrappers.scrapper import Scrapper
 from scrappers.scrapper_random import ScrapperRandom
 
 logger = logging.getLogger(__name__)

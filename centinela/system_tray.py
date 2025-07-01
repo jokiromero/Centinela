@@ -1,6 +1,5 @@
 import asyncio
 import threading
-import time
 import logging
 import winotify
 
@@ -11,8 +10,7 @@ from PIL import ImageFile
 from pystray import Icon, Menu, MenuItem
 
 from centinela.chatbots import Chatbot
-from centinela.persistencia import Persistencia
-from centinela.scrappers.scrapper import Scrapper
+from centinela.data_box import DataBox
 
 logger = logging.getLogger(__name__)
 
@@ -41,17 +39,15 @@ class CentinelaSystemTray:
     def __init__(
             self,
             app_nombre: str,
-            data: Persistencia | None = None,
-            scrap: Scrapper | None = None,
-            bot: Chatbot | None = None,
+            data_box: DataBox,
+            chatbot: Chatbot | None = None,
             loop: asyncio.AbstractEventLoop | None = None
     ):
         self._centinela_activo = True
         self._con_voz_activada = False
 
-        self._data = data
-        self._scrap = scrap
-        self._bot = bot
+        self._data_box = data_box
+        self._chatbot = chatbot
         self._loop = loop
 
         # self._centinela_system_tray = Icon(config.APP_NOMBRE, self._get_logo(), menu=self._get_menu())
@@ -68,7 +64,7 @@ class CentinelaSystemTray:
         self._task_scrap = task_scrap
 
 
-    def iniciar_system_tray(self):
+    def iniciar(self):
         """
         Ejecuta el icono de sistema en un hilo separado para evitar bloqueo
         del event loop.
@@ -107,9 +103,9 @@ class CentinelaSystemTray:
                      action=lambda icon: self.accion_fijar_notificaciones(
                          icon, valor=config.Notificaciones.TODOS_LOS_INTERVALOS),
                      checked=lambda item: config.tipo_notificaciones_activo == 1),
-            MenuItem(text=f"Activar ChatBot de {self._bot.nombre}", radio=True,
+            MenuItem(text=f"Activar ChatBot de {self._chatbot.nombre}", radio=True,
                      action=_async_menu_wrapper(self.accion_activar_bot, self._loop),
-                     checked=lambda item: self._bot.esta_activo),
+                     checked=lambda item: self._chatbot.esta_activo),
             Menu.SEPARATOR,
             MenuItem(text="Con voz", action=self.accion_activar_voz,
                      checked=lambda item: self._con_voz_activada),
@@ -126,17 +122,17 @@ class CentinelaSystemTray:
         ])
         return menu
 
-    async def bucle_principal_obsoleto(self):
-        while True:
-            print(f"bucle_principal    >> {self._centinela_activo=}")
-            if self._centinela_activo:
-                self._data.lectura_nueva = self._scrap.leer_datos()
-                await self._data.mostrar_datos(con_voz=self._con_voz_activada)
-                intervalo = 60 * config.tupla_intervalo_activo[1]
-                print(f"{intervalo=}")
-                # time.sleep(intervalo)
-                await asyncio.sleep(intervalo)
-                print(f"Fin del intervalo {time.thread_time()=}")
+    # async def bucle_principal_obsoleto(self):
+    #     while True:
+    #         print(f"bucle_principal    >> {self._centinela_activo=}")
+    #         if self._centinela_activo:
+    #             self._data.lectura_nueva = self._scrap.leer_datos()
+    #             await self._data.mostrar_datos(con_voz=self._con_voz_activada)
+    #             intervalo = 60 * config.tupla_intervalo_activo[1]
+    #             print(f"{intervalo=}")
+    #             # time.sleep(intervalo)
+    #             await asyncio.sleep(intervalo)
+    #             print(f"Fin del intervalo {time.thread_time()=}")
 
     # noinspection SpellCheckingInspection
     def accion_fijar_intervalo(self, icon, texto_intervalo):
@@ -178,24 +174,24 @@ class CentinelaSystemTray:
 
     # noinspection SpellCheckingInspection
     async def accion_activar_bot(self):
-        print(f">>> {self._bot=}  --  {self._bot.esta_activo=}")
-        if self._bot:
-            if self._bot.esta_activo:
-                self._bot.esta_activo = False
-                await self._bot.enviar_mensaje_a_suscriptores(
+        print(f">>> {self._chatbot=}  --  {self._chatbot.esta_activo=}")
+        if self._chatbot:
+            if self._chatbot.esta_activo:
+                await self._chatbot.desactivar()
+                await self._chatbot.enviar_mensaje_a_suscriptores(
                     texto= "❌ Centinela <b>ha pausado</b> el envío de notificaciones a este Chatbot",
                     parse_mode="HTML"
                 )
             else:
-                self._bot.esta_activo = True
-                await self._bot.enviar_mensaje_a_suscriptores(
-                    texto="✅ Centinela <b>ha vuelto a actviar</b> el envío de notificaciones a este Chatbot",
+                await self._chatbot.activar()
+                await self._chatbot.enviar_mensaje_a_suscriptores(
+                    texto="✅ Centinela <b>ha actiado</b> el envío de notificaciones a este Chatbot",
                     parse_mode="HTML"
             )
 
 
     async def repetir_mostrar(self):
-        await self._data.mostrar_datos(es_una_repeticion=True, con_voz=self._con_voz_activada)
+        await self._data_box.mostrar_datos(es_una_repeticion=True, con_voz=self._con_voz_activada)
 
     # noinspection SpellCheckingInspection
     async def accion_salir(self):
@@ -207,8 +203,8 @@ class CentinelaSystemTray:
             self._task_scrap.cancel()
 
         # Detener bot si tiene lógica de cierre
-        if self._bot:
-            await self._bot.parar()
+        if self._chatbot:
+            await self._chatbot.parar()
 
         # Detener el icono de sistema
         self._system_tray.stop()

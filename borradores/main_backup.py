@@ -4,7 +4,6 @@ import config
 import logging
 
 from centinela.chatbots import ChatbotTelegram
-from persistencia import Persistencia, Lectura
 from scrappers.scrapper import Scrapper
 from scrappers.scrapper_random import ScrapperRandom
 from system_tray import CentinelaSystemTray
@@ -37,21 +36,18 @@ async def main():
     # scrap=ScrapperVerkami(url=config.URL_MORTADELO, titulo="Proyecto Mortadelo"),
     scrapper = ScrapperRandom(titulo="Datos sintéticos")
     chatbot = ChatbotTelegram(token=config.TOKEN_TELEGRAM)
-    datos_persistentes = Persistencia(
-        config.FICHERO_EXCEL_DATOS, clase_databox=Lectura, bot=chatbot
-    )
 
     centinela_tray = CentinelaSystemTray(
         app_nombre=config.APP_NOMBRE,
-        data=datos_persistentes,
+        data_box=datos_persistentes,
         scrap=scrapper,
-        bot=chatbot,
+        chatbot=chatbot,
         loop=loop
     )
 
     # Hilo para la bandeja del sistema
     tray_thread = threading.Thread(
-        target=centinela_tray.iniciar_system_tray, daemon=True
+        target=centinela_tray.iniciar, daemon=True
     )
     tray_thread.start()
 

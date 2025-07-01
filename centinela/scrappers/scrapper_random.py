@@ -1,7 +1,7 @@
 import random
 import logging
 
-from centinela.data_box import DataBox, DataBoxVerkami
+from centinela.data_box import DataBoxVerkami
 from centinela.scrappers.scrapper import Scrapper
 
 logger = logging.getLogger(__name__)
@@ -14,7 +14,7 @@ class ScrapperRandom(Scrapper):
     """
 
     def __init__(self, url: str, titulo: str):
-        super().__init__(url=url)
+        super().__init__(url=url, titulo=titulo)
 
         # Probabilidad de que la nueva solicitud de datos devuelva valores diferentes
         # a los generados anteriormente
@@ -65,7 +65,7 @@ class ScrapperRandom(Scrapper):
                 self._data_box = lectura
 
                 if self.hemos_terminado():
-                    self._data_box.datos.titulo = self.titulo + "(TERMINADO)"
+                    self._data_box.datos.titulo = self._titulo + "(TERMINADO)"
                     self._data_box.datos.restante = 0   # para evitar que sea < 0
 
         return self._data_box
@@ -74,8 +74,9 @@ class ScrapperRandom(Scrapper):
 
 if __name__ == "__main__":
      # pruebas del módulo
-    def run(scr: Scrapper) -> DataBoxVerkami:
+    def run(scr: ScrapperRandom) -> DataBoxVerkami:
         return scr.leer_datos()
+
     ant = 0
     s = ScrapperRandom(url="ninguna", titulo="Prueba de Random Scrapper")
     for i in range(30):

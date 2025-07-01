@@ -1,4 +1,3 @@
-import logging
 from abc import ABC, abstractmethod
 
 import logging
@@ -41,9 +40,14 @@ class Chatbot(ABC):
             self._activo = False
         return self._activo
 
-    @esta_activo.setter
-    def esta_activo(self, val: bool) -> None:
-        self._activo = val
+    async def activar(self) -> None:
+        print("Intentando activar...")
+        self._activo = True
+        print(f">>> Activado {self._activo=}  -- {self.esta_activo=}")
+
+    async def desactivar(self) -> None:
+        self._activo = False
+        print(f">>> Desactivado {self._activo=}  -- {self.esta_activo=}")
 
     @property
     def nombre(self) -> str:
@@ -181,14 +185,14 @@ class ChatbotTelegram(Chatbot):
 
 
     async def iniciar(self):
-        print(f"iniciar() -- {self._activo=}")
+        print(f"iniciar() -- {self.esta_activo=}")
         await self._dp.start_polling(self._bot, skip_updates=True)
 
     async def parar(self):
         # En aiogram, puedes cerrar el bot manualmente si lo necesitas
         # await self._bot.session.close()
         if self.esta_activo:
-            self.esta_activo = False
+            await self.desactivar()
             await self.enviar_mensaje_a_suscriptores(
                 texto="ATENCIÓN: Este chatbot ha sido parado desde el Servidor de Centinela, que es desde donde "
                       "se generan y se gestionan las notificaciones.\nPor este motivo, a partir de ahora dejarán "
@@ -197,7 +201,7 @@ class ChatbotTelegram(Chatbot):
 
         await self._bot.session.close()
         await self._dp.stop_polling()
-        self.esta_activo = False
+        await self.desactivar()
         print("Bot detenido.")
 
 

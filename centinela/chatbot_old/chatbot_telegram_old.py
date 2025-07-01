@@ -14,11 +14,6 @@ logger = logging.getLogger(__name__)
 MENSAJE_FIJO = "Opciones disponibles:"
 BANNER_TELEGRAM_ID = "AgACAgQAAxkBAAMTaElcxdIpY-3UdJnFwxc4V_e1KwEAArXFMRvJ5ElSVNaFlbLAShsBAAMCAAN5AAM2BA"
 
-MENSAJE_PRUEBA = """
-<b>
-Prueba de mensaje realizado en HTML formateado para probar cómo funciona esto con el bot de Telegram...
-</b>
-"""
 
 class ChatbotTelegram(Chatbot):
     def _inicializar(self, token: str) -> None:
@@ -50,30 +45,30 @@ class ChatbotTelegram(Chatbot):
 
         self._dp.callback_query.register(self._handle_callback)
 
-    def _handle_callback(self, query: types.CallbackQuery):
+    async def _handle_callback(self, query: types.CallbackQuery):
         """Callbacks para recoger la pulsación de los botones"""
         if query.data == "on":
-            self._handle_on(query.message)
+            await self._handle_on(query.message)
 
         if query.data == "off":
-            self._handle_off(query.message)
+            await self._handle_off(query.message)
 
-    def _handle_start(self, message: Message):
+    async def _handle_start(self, message: Message):
         """Callbacks para recoger el comando /start"""
         print("_handle_start")
         # self._iniciar_bot()
-        self.activar()
+        await self.activar()
 
 
-    def _handle_help(self, message: Message):
+    async def _handle_help(self, message: Message):
         """Callbacks para recoger el comando /help"""
         msg = ("AYUDA PARA EL USO DEL CHAT BOT DE CENTINELA:"
                "Pulsa cualquiera de los botones de opción que se muestran. \n"
                "También puedes usar los comandos en línea siguientes:\n"
                "   /on = suscribirte \n"
                "  /off = borrar suscripción")
-        message.answer(msg)
-        self._handle_echo(message)
+        await message.answer(msg)
+        await self._handle_echo(message)
 
     async def _handle_on(self, message: Message):
         """Callbacks para recoger el comando /on"""
@@ -110,8 +105,8 @@ class ChatbotTelegram(Chatbot):
             caption=MENSAJE_FIJO,
             reply_markup=self._keyboard
         )
-        await self._bot.send_message(chat_id=message.chat.id, text=MENSAJE_PRUEBA,
-                                     parse_mode="html")
+        await self._bot.send_message(chat_id=message.chat.id,
+                                     text=f"💚💚💚 ¡¡Gracias por usar Centinela!!",)
 
         # if message.photo:
         #     # Para obtener el id de una foto

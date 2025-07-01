@@ -1,5 +1,7 @@
 import os
 import time
+from typing import Literal
+
 import pyglet
 import winotify
 import openpyxl
@@ -70,7 +72,7 @@ def exportar_excel(
         fich: str | PathLike,
         data: dict,
         index_excel: bool = False,
-        mode: str = "w",
+        mode: Literal["w", "a"] = "w",
         ancho_columnas: dict = None
 ) -> None:
     """

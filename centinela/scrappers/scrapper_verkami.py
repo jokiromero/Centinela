@@ -1,5 +1,4 @@
 from copy import copy
-from datetime import datetime
 
 import requests
 import logging
@@ -22,8 +21,9 @@ class ScrapperVerkami(Scrapper):
     que consiste en un dataclass con los campos específicos que se van a
     obtener en la operación de scrapping.
     """
+
     def __init__(self, url: str, titulo: str) -> None:
-        super().__init__(url=url)
+        super().__init__(url=url, titulo=titulo)
         # Valores iniciales - Primera lectura
         self._lectura_nueva = DataBoxVerkami()
         self._lectura_nueva.datos.titulo = titulo
@@ -47,6 +47,7 @@ class ScrapperVerkami(Scrapper):
         ha alcanzado el límite de tiempo para el proyecto de financiación
         """
         return self._lectura_nueva.datos.restante < 1
+
 
 
     def leer_datos(self) -> DataBoxVerkami | None:

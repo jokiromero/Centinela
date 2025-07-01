@@ -1,3 +1,4 @@
+import asyncio
 import logging
 import os
 from copy import copy
@@ -15,7 +16,7 @@ from num2words import num2words
 
 import config
 import tools
-from chatbot_old.chatbot_old import Chatbot
+from chatbots import Chatbot, ChatbotTelegram
 
 logger = logging.getLogger(__name__)
 
@@ -60,7 +61,7 @@ class DataBox(ABC):
     @abstractmethod
     async def mostrar_datos(self, *args, **kwargs) -> None:
         """
-        Controla la visualización de los datos en diferentes formas (notificaciones Windows,
+        Controla la visualización de los datos en diferentes formas (notificaciones Windows),
         chatbot, etc.
         """
         pass
@@ -76,6 +77,10 @@ class DataBox(ABC):
 
 # noinspection DuplicatedCode
 class DataBoxVerkami(DataBox):
+    """
+    Clase que representa el conjunto de datos leídos del site de Verkami junto a sus métodos y formatos
+    de visualización y persistencia
+    """
     # noinspection DuplicatedCode
     @dataclass
     class _Datos:
@@ -127,18 +132,18 @@ class DataBoxVerkami(DataBox):
                     raise ValueError(f"Fichero vacío '{self._nombre_fichero}'")
 
                 # Ordenar por fecha y tomar la última fila
-                self._df.sort_values(by=self._col["f"], inplace=True)
+                self._df.sort_values(by=self.col("F"), inplace=True)
                 fila = self._df.iloc[-1]
 
-                d = self.datos
+                d = self._datos_anteriores
 
-                self._datos_anteriores.titulo = fila[self.col("Ti")]
-                self._datos_anteriores.fecha = fila[self.col("F")]
-                self._datos_anteriores.restante = fila[self.col("R")]
-                self._datos_anteriores.unidades = fila[self.col("U")]
-                self._datos_anteriores.aportaciones = fila[self.col("A")]
-                self._datos_anteriores.objetivo = fila[self.col("O")]
-                self._datos_anteriores.total = fila[self.col("T")]
+                d.titulo = fila[self.col("Ti")]
+                d.fecha = fila[self.col("F")]
+                d.restante = fila[self.col("R")]
+                d.unidades = fila[self.col("U")]
+                d.aportaciones = fila[self.col("A")]
+                d.objetivo = fila[self.col("O")]
+                d.total = fila[self.col("T")]
 
 
     def _validar_campos(self) -> bool:
@@ -297,8 +302,8 @@ class DataBoxVerkami(DataBox):
                 msg_hablado=msg_voz if con_voz else "",
                 sonido=melodia
             )
-            print(f"{chatbot=}  --- {chatbot.esta_activo=}")
             if chatbot:
+                print(f"{chatbot=}  --- {chatbot.esta_activo=}")
                 if chatbot.esta_activo:
                     await chatbot.enviar_mensaje_a_suscriptores(
                         texto=msg, keyboard=True, parse_mode=ParseMode.HTML
@@ -311,21 +316,34 @@ class DataBoxVerkami(DataBox):
 
 
 if __name__ == "__main__":
-    data = DataBoxVerkami()
-    data.datos.titulo = "Prueba de datos nuevos"
-    data.datos.set_fecha()
-    data.datos.objetivo = 250000
-    data.datos.unidades = "Horas"
-    data.datos.restante = 12
-    data.datos.aportaciones = 133
-    data.datos.total = 125000
-    print(data.datos)
+    async def main():
+        loop = asyncio.get_event_loop()
 
-    print(data.salida_formateada_str("a"))
-    print(">>>>>>>>>>>>>>>>>>>>>")
-    print(data.salida_formateada_str("ab"))
-    print(">>>>>>>>>>>>>>>>>>>>>")
-    print(data.salida_formateada_str("b"))
-    print(">>>>>>>>>>>>>>>>>>>>>")
-    print(data.salida_formateada_str("c"))
-    print(">>>>>>>>>>>>>>>>>>>>>")
+        data = DataBoxVerkami()
+        data.datos.titulo = "Prueba de datos nuevos"
+        data.datos.set_fecha()
+        data.datos.objetivo = 250000
+        data.datos.unidades = "Horas"
+        data.datos.restante = 12
+        data.datos.aportaciones = 133
+        data.datos.total = 125000
+        print(data.datos)
+
+        chatbot = ChatbotTelegram(config.TOKEN_TELEGRAM)
+        await chatbot.iniciar()
+        await chatbot.activar()
+        await asyncio.sleep(1)
+        await data.mostrar_datos(chatbot=chatbot)
+        await chatbot.parar()
+
+        # print(data.salida_formateada_str("a"))
+        # print(">>>>>>>>>>>>>>>>>>>>>")
+        # print(data.salida_formateada_str("ab"))
+        # print(">>>>>>>>>>>>>>>>>>>>>")
+        # print(data.salida_formateada_str("b"))
+        # print(">>>>>>>>>>>>>>>>>>>>>")
+        # print(data.salida_formateada_str("c"))
+        # print(">>>>>>>>>>>>>>>>>>>>>")
+
+    asyncio.run(main())
+
