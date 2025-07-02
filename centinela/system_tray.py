@@ -1,6 +1,7 @@
 import asyncio
-import threading
 import logging
+from typing import Callable, Any, Coroutine
+
 import winotify
 
 import config
@@ -11,27 +12,54 @@ from pystray import Icon, Menu, MenuItem
 
 from centinela.chatbots import Chatbot
 from centinela.data_box import DataBox
+from scrappers.scrapper import Scrapper
 
 logger = logging.getLogger(__name__)
 
 
-def _async_menu_wrapper(coroutine_func, loop: asyncio.AbstractEventLoop, *args, **kwargs):
-    """
-        Devuelve un callback síncrono para pystray que ejecuta una función async en el event loop dado.
 
-        :param coroutine_func: Función asíncrona a ejecutar.
-        :param loop: Instancia de asyncio. AbstractEventLoop.
-        :param args: Argumentos posicionales para la función async.
-        :param kwargs: Argumentos nombrados para la función async.
-        :return: Función síncrona que puede usarse como callback de menú.
+def _async_menu_wrapper(coroutine_func: Callable[..., Coroutine[Any, Any, Any]],
+                        loop: asyncio.AbstractEventLoop) -> Callable[..., None]:
     """
+    Crea un wrapper que permite ejecutar funciones asíncronas (async def)
+    desde contextos síncronos como el menú de pystray, que corre en un hilo
+    distinto al del event loop principal.
 
-    def callback(icon=None, item=None):
-        asyncio.run_coroutine_threadsafe(
+    Utiliza `asyncio.run_coroutine_threadsafe` para enviar la corutina al loop
+    de manera segura desde otros hilos.
+
+    Parámetros:
+    ----------
+    coroutine_func : Callable[..., Coroutine]
+        Función async que se desea ejecutar (ej. `async def mi_func(...):`).
+    loop : asyncio.AbstractEventLoop
+        El event loop principal de asyncio donde deben ejecutarse las tareas.
+
+    Devuelve:
+    --------
+    Callable[..., None]
+        Una función síncrona que acepta cualquier argumento y lanza la corutina
+        de forma segura en el loop.
+
+    Ejemplo de uso:
+    --------------
+        MenuItem(
+            text="Salir",
+            action=lambda icon: _async_menu_wrapper(self.accion_salir, self._loop)(icon)
+        )
+    """
+    def wrapper(*args: Any, **kwargs: Any) -> None:
+        future = asyncio.run_coroutine_threadsafe(
             coroutine_func(*args, **kwargs), loop
         )
 
-    return callback
+        # (Opcional) Descomentar el bloque try para capturar errores del futuro
+        #            (no recomendado si bloquea el hilo)
+        # try:
+        #     result = future.result(timeout=3)  # cuidado: esto bloquea el hilo
+        # except Exception as e:
+        #     print(f"[ERROR en async task del menú]: {e}")
+    return wrapper
 
 
 
@@ -39,6 +67,7 @@ class CentinelaSystemTray:
     def __init__(
             self,
             app_nombre: str,
+            scrapper: Scrapper,
             data_box: DataBox,
             chatbot: Chatbot | None = None,
             loop: asyncio.AbstractEventLoop | None = None
@@ -46,6 +75,7 @@ class CentinelaSystemTray:
         self._centinela_activo = True
         self._con_voz_activada = False
 
+        self._scrapper = scrapper
         self._data_box = data_box
         self._chatbot = chatbot
         self._loop = loop
@@ -59,10 +89,21 @@ class CentinelaSystemTray:
         self._task_bot = None
         self._task_scrap = None
 
+    async def bucle_scrapping(self):
+        try:
+            while True:
+                databox = self._scrapper.leer_datos()
+                await databox.mostrar_datos(con_voz=self._con_voz_activada,
+                                            chatbot=self._chatbot)
+                intervalo = 60 * config.tupla_intervalo_activo[1]
+                await asyncio.sleep(intervalo)
+        except asyncio.CancelledError:
+            logger.info("Tarea 'bucle_scrapping()' cancelada...")
+
+
     def registrar_tareas_async(self, task_bot, task_scrap):
         self._task_bot = task_bot
         self._task_scrap = task_scrap
-
 
     def iniciar(self):
         """
@@ -119,21 +160,12 @@ class CentinelaSystemTray:
                      action=_async_menu_wrapper(self.repetir_mostrar, self._loop)),
             Menu.SEPARATOR,
             MenuItem(text="Salir",
-                     action=_async_menu_wrapper(self.accion_salir, self._loop))
+                     # action=_async_menu_wrapper(self.accion_salir, self._loop))
+                     action=lambda icon: _async_menu_wrapper(self.accion_salir,
+                                                             self._loop)(icon))
         ])
         return menu
 
-    # async def bucle_principal_obsoleto(self):
-    #     while True:
-    #         print(f"bucle_principal    >> {self._centinela_activo=}")
-    #         if self._centinela_activo:
-    #             self._data.lectura_nueva = self._scrap.leer_datos()
-    #             await self._data.mostrar_datos(con_voz=self._con_voz_activada)
-    #             intervalo = 60 * config.tupla_intervalo_activo[1]
-    #             print(f"{intervalo=}")
-    #             # time.sleep(intervalo)
-    #             await asyncio.sleep(intervalo)
-    #             print(f"Fin del intervalo {time.thread_time()=}")
 
     # noinspection SpellCheckingInspection
     def accion_fijar_intervalo(self, icon, texto_intervalo):
@@ -192,28 +224,29 @@ class CentinelaSystemTray:
 
 
     async def repetir_mostrar(self):
-        await self._data_box.mostrar_datos(es_una_repeticion=True, con_voz=self._con_voz_activada)
+        await self._data_box.mostrar_datos(
+            es_una_repeticion=True, con_voz=self._con_voz_activada, chatbot=self._chatbot
+        )
 
     # noinspection SpellCheckingInspection
-    async def accion_salir(self):
+    async def accion_salir(self, icon):
         # TODO: la salida debería ser "elegante" y no abrupta como ahora
-        # Cancelar tareas async
-        if self._task_bot and not self._task_bot.done():
-            self._task_bot.cancel()
+        logger.info(">> Saliendo de la aplicación...")
 
-        if self._task_scrap and not self._task_scrap.done():
-            self._task_scrap.cancel()
+        icon.stop()
 
-        # Detener bot si tiene lógica de cierre
         if self._chatbot:
             await self._chatbot.parar()
 
-        # Detener el icono de sistema
-        self._system_tray.stop()
+        # Cancelar tareas async
+        def _cancelar_tareas():
+            if self._task_bot and not self._task_bot.done():
+                self._task_bot.cancel()
 
-        # Detener el event loop tras un breve retraso para permitir cancelaciones
-        def stop_loop():
-            if self._loop and self._loop.is_running():
-                self._loop.stop()
+            if self._task_scrap and not self._task_scrap.done():
+                self._task_scrap.cancel()
 
-        threading.Timer(interval=1, function=stop_loop).start()
+            # Detener el icono de sistema
+            self._system_tray.stop()
+
+        self._loop.call_soon_threadsafe(_cancelar_tareas)

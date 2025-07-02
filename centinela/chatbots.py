@@ -203,24 +203,31 @@ class ChatbotTelegram(Chatbot):
 
 
     async def iniciar(self):
-        print(f"iniciar() -- {self.esta_activo=}")
-        await self._dp.start_polling(self._bot, skip_updates=True)
+        try:
+            await self._dp.start_polling(self._bot, skip_updates=True)
+
+        except asyncio.CancelledError:
+            logger.info("Bot cancelado...")
+            await self._dp.storage.close()
+            await self._bot.session.close()
+            raise
+
 
     async def parar(self):
         # En aiogram, puedes cerrar el bot manualmente si lo necesitas
         # await self._bot.session.close()
         if self.esta_activo:
-            await self.desactivar()
             await self.enviar_mensaje_a_suscriptores(
-                texto="ATENCIÓN: Este chatbot ha sido parado desde el Servidor de Centinela, que es desde donde "
-                      "se generan y se gestionan las notificaciones.\nPor este motivo, a partir de ahora dejarán "
-                      "de recibirse actualizaciones..."
+                texto=f"ATENCIÓN: Este chatbot ha sido parado desde el Servidor de Centinela, que es desde donde "
+                      f"se generan y se gestionan las notificaciones.\nPor este motivo, a partir de ahora dejarán "
+                      f"de recibirse actualizaciones..."
             )
+            await self.desactivar()
 
-        await self._bot.session.close()
         await self._dp.stop_polling()
-        await self.desactivar()
-        print("Bot detenido.")
+        await self._dp.storage.close()
+        await self._bot.session.close()
+        logger.info("Bot detenido.")
 
 
     async def enviar_mensaje_usuario(self, chat_id: int, texto: str,
