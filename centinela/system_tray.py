@@ -92,9 +92,10 @@ class CentinelaSystemTray:
     async def bucle_scrapping(self):
         try:
             while True:
-                databox = self._scrapper.leer_datos()
-                await databox.mostrar_datos(con_voz=self._con_voz_activada,
-                                            chatbot=self._chatbot)
+                self._data_box = self._scrapper.leer_datos()
+                await self._data_box.mostrar_datos(
+                    con_voz=self._con_voz_activada, chatbot=self._chatbot
+                )
                 intervalo = 60 * config.tupla_intervalo_activo[1]
                 await asyncio.sleep(intervalo)
         except asyncio.CancelledError:
@@ -213,13 +214,13 @@ class CentinelaSystemTray:
                 await self._chatbot.desactivar()
                 await self._chatbot.enviar_mensaje_a_suscriptores(
                     texto= "❌ Centinela <b>ha pausado</b> el envío de notificaciones a este Chatbot",
-                    parse_mode="HTML"
+                    linea_estado=True, parse_mode="HTML"
                 )
             else:
                 await self._chatbot.activar()
                 await self._chatbot.enviar_mensaje_a_suscriptores(
                     texto="✅ Centinela <b>ha activado</b> el envío de notificaciones a este Chatbot",
-                    parse_mode="HTML"
+                    linea_estado=True, parse_mode="HTML"
             )
 
 

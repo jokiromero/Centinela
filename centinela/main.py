@@ -17,8 +17,11 @@ logger = logging.getLogger(__name__)
 
 
 async def main():
-    # TODO: NO funciona la repetición del último mensaje
-    # TODO: No funciona el envío de notificaciones al chatbot aunque esté suscrito y activado
+    # TODO: Corregir que hay dos ficheros de logs: 1) en Centinela/logs/* y 2) en Centinela/centinela/logs/*
+    # TODO: Corregir que hay dos ficheros de Datos.xlsx (igual que el anterior)
+    # TODO: Revisar fichero setup.py y actualizar según la última refactorización realizada.
+    # TODO: Mensajes consecutivos aparecen con la misma fecha. Revisar dónde se está asignado la fecha a los datos.
+    # TODO: Enviar un mensaje a los usuarios cuando el bot se detenga porque se ha detenido Centinela
     loop = asyncio.get_running_loop()
 
     # scrap=ScrapperVerkami(url=config.URL_ISPHANYA, titulo="Proyecto 'ISPHANYA'"),

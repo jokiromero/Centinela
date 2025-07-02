@@ -38,6 +38,7 @@ class ScrapperRandom(Scrapper):
 
     def leer_datos(self) -> DataBoxVerkami:
         if not self.hemos_terminado():
+            logger.info("Scrapper accediendo a ")
             # Determina si ha de simularse que los datos de origen han cambiado
             if self._data_box.datos.total == 0:
                 # Fuerza a que la primera vez siempre lea datos nuevos

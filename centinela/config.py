@@ -44,13 +44,17 @@ INTERVALOS = {
     "Cada minuto": 1,
 }
 
+# carpeta = os.getcwd()
+carpeta = pathlib.Path(__file__).parent
+# print(f"{carpeta=}")
+
 APP_NOMBRE = "Centinela"
 APP_VERSION = "2.0"
 URL_ISPHANYA = "https://www.verkami.com/projects/40960-isphanya"
 URL_MORTADELO = ("https://www.verkami.com/projects/40554-mortadelo-multiverso-el-"
                  "juego-de-cartas-que-salvara-el-universo-a-mamporro-limpio")
-FICHERO_EXCEL_DATOS = "Datos_Centinela.xlsx"
-FICHERO_LOG = r"logs\centinela.log"
+FICHERO_EXCEL_DATOS = os.path.join(carpeta, "Datos_Centinela.xlsx")
+FICHERO_LOG = os.path.join(carpeta, "logs", "centinela.log")
 NIVEL_LOG = logging.INFO
 
 
@@ -61,9 +65,6 @@ tipo_notificaciones_activo = Notificaciones.TODOS_LOS_INTERVALOS
 tupla_intervalo_activo = list(INTERVALOS.items())[INTERVALOS.__len__() - 1]
 # tupla_intervalo_activo = list(INTERVALOS.items())[0]
 
-# carpeta = os.getcwd()
-carpeta = pathlib.Path(__file__).parent
-# print(f"{carpeta=}")
 LOGO_ACTIVO = Image.open(os.path.join(carpeta, r"images\ojo_abierto.png"))
 LOGO_INACTIVO = Image.open(os.path.join(carpeta, r"images\ojo_cerrado.png"))
 ICONO_ACTIVO_FICH = os.path.join(carpeta, r"images\ojo_abierto.ico")

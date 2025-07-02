@@ -2,10 +2,13 @@ include requirements.txt
 include README.md
 include MANIFEST.in
 include centinela.cmd
+include Datos_Centinela.xlsx
+include Pipfile
 
 recursive-include images *
 recursive-include documents *
 recursive-include dist *
+recursive-include logs *
 recursive-include centinela *
 recursive-include _tools *
 

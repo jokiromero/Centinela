@@ -34,6 +34,6 @@ setup(
     # scripts=["main.py",],
     # py_modules=["config.py", "persistencia.py", "scrapper_verkami.py", "tools.py"],
     packages=paquetes,
-    package_data={"centinela": ["_tools/*", "images/*"]},
+    package_data={"centinela": ["_tools/*", "images/*", "logs/*", "documents/*"]},
     include_package_data=True,  # incluir todos los ficheros del proyecto siguiendo lo indicado en MANIFIEST.in
 )
