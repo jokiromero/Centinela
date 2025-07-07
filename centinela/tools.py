@@ -1,7 +1,5 @@
 import os
 import time
-from typing import Literal
-
 import pyglet
 import winotify
 import openpyxl
@@ -9,18 +7,18 @@ import openpyxl.utils
 import pandas as pd
 import logging
 
+from typing import Union, Literal
 from os import PathLike
-
-from pathlib import Path
+from pandas import DataFrame
 from threading import Thread, Lock
 from gtts import gTTS
-from openpyxl.styles import Alignment, Font, PatternFill
+from openpyxl.styles import PatternFill, Font, Alignment
+from openpyxl.utils import get_column_letter
+from pathlib import Path
 
 from centinela import config
 
-
 logger = logging.getLogger(__name__)
-
 bloqueo_hablar = Lock()
 
 
@@ -44,7 +42,6 @@ def mostrar_notificacion(
     if msg_hablado:
         hilo_hablar = Thread(target=hablar, kwargs={"msg": msg_hablado})
         hilo_hablar.start()
-        print(f"Mensaje hablado: {msg_hablado}")
 
 
 def hablar(msg: str):
@@ -68,27 +65,13 @@ def hablar(msg: str):
     bloqueo_hablar.release()
 
 
-def exportar_excel(
+def exportar_excel_old(
         fich: str | PathLike,
         data: dict,
         index_excel: bool = False,
         mode: Literal["w", "a"] = "w",
         ancho_columnas: dict = None
 ) -> None:
-    """
-        Facilita la exportanción a Excel de Pandas. DataFrames
-            fich = Nombre completo del fichero Excel de salida
-            data = Es un diccionario cuyas claves son los nombres de ls hojas
-                      del Excel a crear y cuyos datos son objetos DataFrame que van
-                      a exportarse
-            index_excel = bool - Si es True el índice se exportará al Excel.
-                      Por defecto es False
-            fmode = 'W' para sobreescribir o "a" para añadir al fichero existente
-                     sobreescribiendo las pestañas preexistentes
-            ancho_columnas = opcional, diccionario con los anchos deseados para
-                             las columnas sobre las que no se prefiera el ancho
-                             automático (autofit)
-        """
     if not isinstance(data, dict):
         msg = "Parámetro 'data' debe ser de tipo 'dict'..."
         # logger.error(msg)
@@ -151,15 +134,125 @@ def exportar_excel(
                     new_column_length = ancho_columnas[column_cells[0].value]
                 else:
                     new_column_length = max(
-                        len(as_text(cell.value)) for cell in column_cells)
-                new_column_letter = (openpyxl.utils.get_column_letter(
-                    column_cells[0].column))
+                        len(as_text(cell.value)) for cell in column_cells
+                    )
+                new_column_letter = (
+                    openpyxl.utils.get_column_letter(
+                        column_cells[0].column
+                    )
+                )
 
                 if new_column_length > 0:
                     ws.column_dimensions[
                         new_column_letter].width = new_column_length + 1
 
-                # todo: alinear las columnas numéricas a la derecha
-                #  column_cells[0].value ==> nombre de la columna
-                #  tipo float ==> issubclass(float, type(column_cells[1].value)
-                #  tipo int ==> issubclass(int, type(column_cells[1].value)
+
+# from pathlib import Path
+# from typing import Union, Literal
+# import os
+# import pandas as pd
+# from pandas import DataFrame
+# from openpyxl.styles import PatternFill, Font, Alignment
+# from openpyxl.utils import get_column_letter
+
+
+def exportar_excel(
+        fich: Union[str, Path],
+        data: dict[str, DataFrame],
+        index_excel: bool = False,
+        mode: Literal["w", "a"] = "w",
+        ancho_columnas: dict[str, int] = None,
+        alineacion_columnas: dict[str, Literal["left", "center", "right"]] = None
+) -> None:
+    fich = Path(fich)
+
+    if not isinstance(data, dict) or not all(isinstance(df, pd.DataFrame) for df in data.values()):
+        raise TypeError("El parámetro 'data' debe ser un diccionario con objetos DataFrame como valores.")
+
+    if mode != "a" and fich.exists():
+        fich.unlink()
+    else:
+        logger.debug(f"Escribiendo fichero de salida '{fich}'")
+
+    with pd.ExcelWriter(fich, date_format="yyyy-mm-dd", mode=mode,
+                        engine="openpyxl", if_sheet_exists="replace"
+            if mode == "a" else None) as writer:
+
+        for hoja, df in data.items():
+            df.to_excel(writer, sheet_name=hoja, header=True,
+                        index=index_excel, merge_cells=False,
+                        freeze_panes=(1, 0))
+
+            wb = writer.book
+            ws = wb[hoja]
+
+            # Estilos
+            fill_cabecera = PatternFill(fgColor="00858C", fill_type="solid")
+            font_cabecera = Font(name="Consolas", size=10, color="FFFFFF", bold=True)
+            font_cuerpo = Font(name="Consolas", size=10, color="000000", bold=False)
+
+            # Crear alineaciones de columnas
+            alineaciones = {}
+            if alineacion_columnas:
+                for col, alin in alineacion_columnas.items():
+                    alineaciones[col] = Alignment(horizontal=alin, vertical="top")
+            else:
+                for col in df.columns:
+                    if pd.api.types.is_numeric_dtype(df[col]):
+                        alin = "right"
+                    else:
+                        alin = "left"
+                    alineaciones[col] = Alignment(horizontal=alin, vertical="top")
+
+            # Obtener encabezados en orden según fila 1
+            headers = [cell.value for cell in ws[1]]
+
+            # Aplicar estilos a cabecera y cuerpo
+            for row in ws.iter_rows(min_row=1, max_row=len(df) + 1, max_col=len(headers) + (1 if index_excel else 0)):
+                for cell in row:
+                    col_idx = cell.column - 1
+                    if index_excel:
+                        col_idx -= 1
+                        if col_idx < 0:
+                            continue  # columna del índice
+
+                    col_name = headers[col_idx] if col_idx < len(headers) else None
+
+                    if cell.row == 1:
+                        align = alineaciones.get(col_name, Alignment(horizontal="left", vertical="bottom"))
+                        cell.fill = fill_cabecera
+                        cell.font = font_cabecera
+                        cell.alignment = Alignment(horizontal=align.horizontal, vertical="bottom")
+                    else:
+                        align = alineaciones.get(col_name, Alignment(horizontal="left", vertical="top"))
+                        cell.font = font_cuerpo
+                        cell.alignment = align
+
+            # Ajuste de anchos de columnas
+            def as_text(value):
+                return "" if value is None else str(value)
+
+            for column_cells in ws.columns:
+                col_name = column_cells[0].value
+                if ancho_columnas and col_name in ancho_columnas:
+                    new_column_length = ancho_columnas[col_name]
+                else:
+                    new_column_length = max(len(as_text(cell.value)) for cell in column_cells)
+                new_column_letter = get_column_letter(column_cells[0].column)
+                if new_column_length > 0:
+                    ws.column_dimensions[new_column_letter].width = new_column_length + 1
+
+def reemplazar_en_lista(items: list[str],
+                        buscar: list[str],
+                        sustituir: list[str]) -> list[str]:
+    if len(buscar) != len(sustituir):
+        raise ValueError("Las listas 'buscar' y 'sustituir' deben tener la misma longitud")
+
+    resultado = []
+    for item in items:
+        nuevo = item
+        for b, s in zip(buscar, sustituir):
+            nuevo = nuevo.replace(b, s)
+        resultado.append(nuevo)
+
+    return resultado

@@ -1,0 +1,118 @@
+from __future__ import annotations
+from dataclasses import dataclass, field, fields
+from abc import ABC, abstractmethod
+from typing import Type, TypeVar, Generic
+from datetime import datetime
+import pandas as pd
+import os
+
+
+
+
+class Databox(ABC):
+    @dataclass(frozen=True, slots=True)
+    class _Datos:
+        timestamp: str = field(
+            default_factory=lambda: datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        )
+
+        def con_fecha(self, nueva_fecha: str) -> '_Datos':
+            try:
+                # Validar formato
+                datetime.strptime(nueva_fecha, "%Y-%m-%d %H:%M:%S")
+            except ValueError:
+                raise ValueError("Formato de fecha inválido. Se espera 'YYYY-MM-DD HH:MM:SS'")
+            # Reemplazar timestamp por el nuevo valor
+            return replace(self, timestamp=nueva_fecha)
+
+    @property
+    def datos(self) -> _Datos:
+        return self._datos
+
+    @abstractmethod
+    def mostrar(self) -> str:
+        pass
+
+    def actualizar(self, nuevos_datos: _Datos):
+        if nuevos_datos == self._datos:
+            # No hay cambios, no se actualiza ni se añade al historial
+            print("⚠️  Datos idénticos: no se actualiza el registro.")
+            return
+        self._datos = nuevos_datos
+        self._historial.append(nuevos_datos)
+
+    def guardar(self, ruta: str):
+        df = pd.DataFrame([d.__dict__ for d in self._historial])
+        df.to_excel(ruta, index=False)
+
+    @classmethod
+    def cargar(cls: Type[T], ruta: str) -> T:
+        if not os.path.exists(ruta):
+            raise FileNotFoundError(f"No se encontró el archivo: {ruta}")
+
+        df = pd.read_excel(ruta)
+        if df.empty:
+            raise ValueError("El archivo está vacío")
+
+        columnas_esperadas = {f.name for f in fields(cls._Datos)}
+        columnas_encontradas = set(df.columns)
+
+        faltantes = columnas_esperadas - columnas_encontradas
+        if faltantes:
+            raise ValueError(f"Faltan columnas esperadas: {faltantes}")
+
+        historial = [
+            cls._Datos(**fila)
+            for fila in df.to_dict(orient="records")
+        ]
+
+        instancia = cls(historial[0])
+        instancia._historial = historial
+        instancia._datos = historial[-1]
+        return instancia
+
+
+# 🔸 Ejemplo concreto de subclase
+class UsuarioDatabox(Databox):
+    @dataclass(frozen=True)
+    class _Datos(Databox._Datos):
+        id: int
+        nombre: str
+        email: str
+        timestamp: datetime = field(default_factory=datetime.now)
+
+        def con_email(self, nuevo_email: str) -> UsuarioDatabox._Datos:
+            return self.__class__(**{**self.__dict__, "email": nuevo_email})
+
+    def mostrar(self) -> str:
+        d = self.datos
+        return f"[{d.timestamp:%Y-%m-%d %H:%M:%S}] Usuario {d.nombre} ({d.email})"
+
+    @classmethod
+    def crear(cls, id: int, nombre: str, email: str) -> UsuarioDatabox:
+        datos = cls._Datos(id=id, nombre=nombre, email=email)
+        return cls(datos)
+
+    def actualizar_fecha(self, nueva_fecha: str) -> None:
+        self._datos = self._datos.con_fecha(nueva_fecha)
+    (ver si puedo meter este metodo dentro de _Datos()
+
+////////////////////////////////////////////////////////////////////////////////
+
+# Crear
+usuario = UsuarioDatabox.crear(1, "Ana", "ana@correo.com")
+print(usuario.mostrar())
+
+# Actualizar el email
+nuevo_datos = usuario.datos.con_email("ana@nuevo.com")
+usuario.actualizar(nuevo_datos)
+print(usuario.mostrar())
+
+# Guardar en Excel
+usuario.guardar("usuario.xlsx")
+
+# Cargar desde Excel
+usuario2 = UsuarioDatabox.cargar("usuario.xlsx")
+print(usuario2.mostrar())
+
+

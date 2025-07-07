@@ -1,3 +1,8 @@
+# Sirve para poder usar "forward reference" que son declaraciones
+# y usos de anotaciones sobre tipos o clases que se definen más
+# adelante en el código (future)
+from __future__ import annotations
+
 import asyncio
 import logging
 from typing import Callable, Any, Coroutine
@@ -11,7 +16,7 @@ from PIL import ImageFile
 from pystray import Icon, Menu, MenuItem
 
 from centinela.chatbots import Chatbot
-from centinela.data_box import DataBox
+from centinela.data_box import Databox
 from scrappers.scrapper import Scrapper
 
 logger = logging.getLogger(__name__)
@@ -68,7 +73,7 @@ class CentinelaSystemTray:
             self,
             app_nombre: str,
             scrapper: Scrapper,
-            data_box: DataBox,
+            data_box: Databox,
             chatbot: Chatbot | None = None,
             loop: asyncio.AbstractEventLoop | None = None
     ):
@@ -90,17 +95,37 @@ class CentinelaSystemTray:
         self._task_scrap = None
 
     async def bucle_scrapping(self):
+        logger.info("Comienza el bucle principal 'bucle_scrapping()'...")
         try:
             while True:
-                self._data_box = self._scrapper.leer_datos()
+                lectura = self._scrapper.leer_datos()
+                self._data_box.actualizar_datos(lectura)
                 await self._data_box.mostrar_datos(
                     con_voz=self._con_voz_activada, chatbot=self._chatbot
                 )
                 intervalo = 60 * config.tupla_intervalo_activo[1]
                 await asyncio.sleep(intervalo)
+                if self._scrapper.hemos_terminado():
+                    break
+
         except asyncio.CancelledError:
             logger.info("Tarea 'bucle_scrapping()' cancelada...")
 
+        except ValueError:
+            logger.exception(f"Error leyendo la página '{self._scrapper.url}'")
+            raise
+
+        if self._scrapper.hemos_terminado():
+            logger.info("Se han terminado los datos en el Website...")
+            if self._chatbot.esta_activo:
+                logger.debug("Enviando mensaje de fin a los suscriptores...")
+                await self._chatbot.enviar_mensaje_a_suscriptores(
+                    texto="Atención: este WebSite ya no está generando nuevos datos\n"
+                          "Centinela dejará de enviar nuevos mensajes."
+                )
+                await self._chatbot.desactivar()
+
+        await self.accion_salir(self._system_tray)
 
     def registrar_tareas_async(self, task_bot, task_scrap):
         self._task_bot = task_bot
@@ -170,7 +195,7 @@ class CentinelaSystemTray:
 
     # noinspection SpellCheckingInspection
     def accion_fijar_intervalo(self, icon, texto_intervalo):
-        # todo: verificar que 'texto_intervalo' existe (es una clave) en
+        # TO-DO: verificar que 'texto_intervalo' existe (es una clave) en
         #   el diccionario 'intervalos' para evitar que este función sea llamada
         #   con valores no existentes y devuelva un error no contrado
         config.tupla_intervalo_activo = (texto_intervalo, config.INTERVALOS[texto_intervalo])
@@ -189,15 +214,15 @@ class CentinelaSystemTray:
     # noinspection SpellCheckingInspection
     def accion_activar_voz(self):
         self._con_voz_activada = not self._con_voz_activada
-        print(f"Menú activar/desactivar voz >> {config.voz_activada=}")
         fin_mensaje = "activados" if self._con_voz_activada else "desactivados"
+        msg = "Mensajes de voz " + fin_mensaje
         tools.mostrar_notificacion(
-            msg="Mensajes de voz " + fin_mensaje,
+            msg=msg,
             msg_hablado="Los mensajes de voz han sido " + fin_mensaje
         )
-        # self._system_tray.icon = self._get_logo()
         self._system_tray.menu = self._get_menu()
         self._system_tray.update_menu()
+        logger.info(msg)
 
     # noinspection SpellCheckingInspection
     def accion_activar_app(self):
@@ -208,7 +233,6 @@ class CentinelaSystemTray:
 
     # noinspection SpellCheckingInspection
     async def accion_activar_bot(self):
-        print(f">>> {self._chatbot=}  --  {self._chatbot.esta_activo=}")
         if self._chatbot:
             if self._chatbot.esta_activo:
                 await self._chatbot.desactivar()
@@ -223,7 +247,6 @@ class CentinelaSystemTray:
                     linea_estado=True, parse_mode="HTML"
             )
 
-
     async def repetir_mostrar(self):
         await self._data_box.mostrar_datos(
             es_una_repeticion=True, con_voz=self._con_voz_activada, chatbot=self._chatbot
@@ -231,7 +254,6 @@ class CentinelaSystemTray:
 
     # noinspection SpellCheckingInspection
     async def accion_salir(self, icon):
-        # TODO: la salida debería ser "elegante" y no abrupta como ahora
         logger.info(">> Saliendo de la aplicación...")
 
         icon.stop()

@@ -1,3 +1,8 @@
+# Sirve para poder usar "forward reference" que son declaraciones
+# y usos de anotaciones sobre tipos o clases que se definen más
+# adelante en el código (future)
+from __future__ import annotations
+
 from abc import ABC, abstractmethod
 
 import logging
@@ -40,13 +45,12 @@ class Chatbot(ABC):
         return self._activo
 
     async def activar(self) -> None:
-        print("Intentando activar...")
-        self._activo = True
-        print(f">>> Activado {self._activo=}  -- {self.esta_activo=}")
+        if not self.esta_activo:
+            self._activo = True
 
     async def desactivar(self) -> None:
-        self._activo = False
-        print(f">>> Desactivado {self._activo=}  -- {self.esta_activo=}")
+        if self.esta_activo:
+            self._activo = False
 
     @property
     def nombre(self) -> str:
@@ -138,13 +142,13 @@ class ChatbotTelegram(Chatbot):
                    f"No hace falta que hagas nada adicional...\n\n")
 
         if self.esta_activo:
-            msg += (f"A partir de ahora y mientras dure la sesión actual, recibirás actualizaciones "
-                    f"directamente en este chatbot cada vez que éstas ocurran.\n\n "
-                    f"💚💚💚 ¡¡Gracias por usar Centinela!!")
+            msg += (f"A partir de ahora y mientras dure la sesión actual, recibirás "
+                    f"actualizaciones directamente en este chatbot cada vez "
+                    f"que éstas ocurran.\n\n 💚💚💚 ¡¡Gracias por usar Centinela!!")
         else:
-            msg += (f"Lamentablemente, Centinela tiene desactivado en este momento el envío "
-                    f"de notificaciones al chatbot. Cuando se activen de nuevo y si aún estás "
-                    f"suscrito, recibirás actualizaciones directamente en este chat.")
+            msg += (f"Lamentablemente, Centinela tiene desactivado en este momento "
+                    f"el envío de notificaciones al chatbot. Cuando se activen de nuevo "
+                    f"y si aún estás suscrito, volverás a recibir actualizaciones.")
 
         caption = self._get_estado(chat_id=message.chat.id,
                                    usuario=message.chat.full_name)
@@ -163,7 +167,7 @@ class ChatbotTelegram(Chatbot):
         msg = f"{message.chat.full_name} (id={message.chat.id})"
         if message.chat.id in self._suscriptores:
             self._suscriptores.remove(message.chat.id)
-            msg = (f"{msg}\n ha cancelado su suscripción a las notificaciones de Centinela.\n"
+            msg = (f"{msg}\nHas cancelado tu suscripción a las notificaciones de Centinela.\n"
                    f"¡¡Vuelve cuando quieras...!!")
         else:
             msg = f"{msg}: no estás suscrito a las notificaciones de Centinela."
@@ -179,7 +183,11 @@ class ChatbotTelegram(Chatbot):
         await message.answer(msg, reply_markup=self._keyboard)
 
     async def _handle_echo(self, message: Message):
-        """Callbacks para reaccionar con una respuesta por defecto"""
+        """
+        Callbacks para reaccionar a cualquier mensaje de los usuarios y responder
+        con una respuesta por defecto. Si se analiza y discrimina sobre el contenido
+        de message.text, se pueden elaborar respuestas en función del mensaje recibido
+        """
         await self._bot.delete_message(message.chat.id, message.message_id)
         mensaje = (self._get_estado(
             chat_id=message.chat.id, usuario=message.chat.full_name
@@ -242,6 +250,15 @@ class ChatbotTelegram(Chatbot):
         estado_bot = "✅ ACTIVADO" if self.esta_activo else "❌‍ DESACTIVADO"
         return f"{usuario}: {estado_usuario}  >>>  Bot: {estado_bot}"
 
+    async def activar(self):
+        if not self.esta_activo:
+            await super().activar()
+            logger.info(f"Chatbot activado")
+
+    async def desactivar(self):
+        if self.esta_activo:
+            await super().desactivar()
+            logger.info(f"Chatbot desactivado")
 
 
 if __name__ == '__main__':

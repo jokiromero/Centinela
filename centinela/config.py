@@ -41,7 +41,7 @@ INTERVALOS = {
     "Cada 15 minutos": 15,
     "Cada 20 minutos": 20,
     "Cada 45 minutos": 45,
-    "Cada minuto": 1,
+    "Cada 20 segundos ": 0.33,
 }
 
 # carpeta = os.getcwd()
@@ -53,9 +53,13 @@ APP_VERSION = "2.0"
 URL_ISPHANYA = "https://www.verkami.com/projects/40960-isphanya"
 URL_MORTADELO = ("https://www.verkami.com/projects/40554-mortadelo-multiverso-el-"
                  "juego-de-cartas-que-salvara-el-universo-a-mamporro-limpio")
+URL_VIAJE_DE_NUR = "https://www.verkami.com/projects/40963-el-viatge-de-nur-o-els-nens-del-zodiac"
+URL_7291 = "https://www.verkami.com/projects/38738-7291"
 FICHERO_EXCEL_DATOS = os.path.join(carpeta, "Datos_Centinela.xlsx")
+FICHERO_EXCEL_TEST = os.path.join(carpeta, "Datos_Centinela__TEST__.xlsx")
 FICHERO_LOG = os.path.join(carpeta, "logs", "centinela.log")
-NIVEL_LOG = logging.INFO
+NIVEL_LOG = logging.DEBUG
+# NIVEL_LOG = logging.INFO
 
 
 # Valores iniciales por defecto

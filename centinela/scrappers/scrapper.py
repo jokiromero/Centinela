@@ -1,7 +1,12 @@
+# Sirve para poder usar "forward reference" que son declaraciones
+# y usos de anotaciones sobre tipos o clases que se definen más
+# adelante en el código (future)
+from __future__ import annotations
+
 import logging
 
 from abc import ABC, abstractmethod
-from centinela.data_box import DataBox
+from centinela.data_box import Databox
 
 
 logger = logging.getLogger(__name__)
@@ -14,7 +19,7 @@ class Scrapper(ABC):
     mediante 'leer_datos()'
     """
     def __init__(self, url: str, titulo: str, *args, **kwargs):
-        self._lectura_nueva: DataBox | None = None
+        self._datos: Databox._Datos | None = None
         self._url = url
         self._titulo = titulo
 
@@ -27,17 +32,20 @@ class Scrapper(ABC):
         pass
 
     @abstractmethod
-    def leer_datos(self) -> DataBox:
+    def leer_datos(self) -> Databox._Datos:
         """
         Cada subclase deberá definir aquí los pasos a realizar para llevar a cabo
         la operación de scrapping y devolver los datos leídos
 
-        :return: Una instancia de una subclase de DataBox conteniendo los datos leídos
+        :return: Una instancia de una subclase de Databox conteniendo los datos leídos
         """
         pass
 
     # noinspection PyProtectedMember
     @property
-    def datos(self) -> DataBox._Datos:
-        return self._lectura_nueva.datos
+    def datos(self) -> Databox._Datos:
+        return self._datos
 
+    @property
+    def url(self):
+        return self._url

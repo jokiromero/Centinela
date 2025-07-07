@@ -1,7 +1,12 @@
+# __future__.annotations sirve para poder usar "forward reference"
+# que son declaraciones y usos de anotaciones sobre tipos o clases
+# que se definen más adelante en el código (future)
+from __future__ import annotations
+
 import random
 import logging
 
-from centinela.data_box import DataBoxVerkami
+from centinela.data_box import DataboxVerkami
 from centinela.scrappers.scrapper import Scrapper
 
 logger = logging.getLogger(__name__)
@@ -16,72 +21,87 @@ class ScrapperRandom(Scrapper):
     def __init__(self, url: str, titulo: str):
         super().__init__(url=url, titulo=titulo)
 
-        # Probabilidad de que la nueva solicitud de datos devuelva valores diferentes
-        # a los generados anteriormente
-        self._ratio_valores_nuevos = 0.14
+        # Probabilidad simulada de que la nueva solicitud de datos devuelva
+        # valores diferentes a los recibidos anteriormente
+        self._ratio_valores_nuevos = 0.50
 
         # Valores iniciales - Primera lectura
-        self._data_box = DataBoxVerkami()
-        self._data_box.datos.titulo = titulo
-        self._data_box.datos.restante = random.choices(
-                population=[2, 8, 10],  weights=[100, 1, 1]            )[0]
-        self._data_box.datos.unidades = "Dias"
-        self._data_box.datos.aportaciones = 0
-        self._data_box.datos.objetivo = random.randint(10, 100) * 1000
-        self._data_box.datos.total = 0
-        self._data_box.datos.set_fecha()
-
+        self._datos = DataboxVerkami.new_datos(
+            titulo=self._titulo,
+            resto_valor=random.choices(
+                    population=[5, 16, 30],  weights=[100, 1, 1]
+            )[0],
+            resto_etiq="Dias",
+            aporta_valor=0,
+            aporta_etiq="Aportaciones",
+            objetivo=random.randint(10, 100) * 1000,
+            total=0
+        )
 
     def hemos_terminado(self) -> bool:
-        return self._data_box.datos.restante < 1
+        return (self._datos.resto_valor < 1
+                and self._datos.resto_etiq.capitalize() == "Segundos")
 
-
-    def leer_datos(self) -> DataBoxVerkami:
+    def leer_datos(self) -> DataboxVerkami._Datos:
+        hay_datos_nuevos = False
+        if self._ratio_valores_nuevos < 0 or self._ratio_valores_nuevos > 1:
+            raise ValueError(f"Valor de self._ratio_valores_nuevos incorrecto: "
+                             f"'{self._ratio_valores_nuevos}'. Debería estar "
+                             f"entre 0.0 y 1.0")
         if not self.hemos_terminado():
-            logger.info("Scrapper accediendo a ")
+            logger.debug("Simulador de scrapper generando datos aleatorios...")
             # Determina si ha de simularse que los datos de origen han cambiado
-            if self._data_box.datos.total == 0:
+            if self._datos.total == 0:
                 # Fuerza a que la primera vez siempre lea datos nuevos
                 hay_datos_nuevos = True
             else:
-                hay_datos_nuevos = random.choices(
-                    population=[True, False],
-                    weights=[self._ratio_valores_nuevos, 1 - self._ratio_valores_nuevos]
-                )[0]
+                hay_datos_nuevos = random.random() < self._ratio_valores_nuevos
 
-            # Si los datos han cambiado calcula los "delta" de cada dato para
-            # calcular con ellos los nuevos datos que van a simular a los datos leídos
+            # Si estamos simulando que hay datos nuevos, se generan 'deltas' para
+            # representar los incrementos de valor que traen los nuevos datos leídos
             if hay_datos_nuevos:
-                delta_restante = random.choices(population=[0, 1], weights=[25, 75])[0]
+                delta_restante = random.choices(population=[0, 1], weights=[30, 70])[0]
                 delta_aportaciones = random.randint(5, 20)
                 delta_total = sum([random.randint(10, 100) for _ in range(delta_aportaciones)])
-                lectura = DataBoxVerkami()
-                lectura.datos.titulo = self._titulo
-                lectura.datos.set_fecha()
-                lectura.datos.restante = self._data_box.datos.restante - delta_restante
-                lectura.datos.unidades = "Dias"
-                lectura.datos.aportaciones = self._data_box.datos.aportaciones + delta_aportaciones
-                lectura.datos.objetivo = self._data_box.datos.objetivo
-                lectura.datos.total = self._data_box.datos.total + delta_total
-                self._data_box = lectura
+                nuevo_restante = self._datos.resto_valor - delta_restante
+                nuevo_titulo = self._titulo
+                if nuevo_restante < 1:
+                    nuevo_restante = 0
+                    nuevo_titulo += " (TERMINADO) "
+                self._datos = DataboxVerkami.new_datos(
+                    titulo=nuevo_titulo,
+                    resto_valor=nuevo_restante,
+                    resto_etiq="Días",
+                    aporta_valor=self._datos.aporta_valor + delta_aportaciones,
+                    aporta_etiq="Aportaciones",
+                    objetivo=self._datos.objetivo,
+                    total=self._datos.total + delta_total
+                )
 
-                if self.hemos_terminado():
-                    self._data_box.datos.titulo = self._titulo + "(TERMINADO)"
-                    self._data_box.datos.restante = 0   # para evitar que sea < 0
-
-        return self._data_box
+        return self._datos
 
 
 
 if __name__ == "__main__":
      # pruebas del módulo
-    def run(scr: ScrapperRandom) -> DataBoxVerkami:
+    def run(scr: ScrapperRandom) -> DataboxVerkami._Datos:
         return scr.leer_datos()
 
     ant = 0
+    tot = 150
     s = ScrapperRandom(url="ninguna", titulo="Prueba de Random Scrapper")
-    for i in range(30):
-        databox = run(s)
-        nuevos = "Datos nuevos -- " if databox.datos.total != ant else "--------------- "
-        print(f"{nuevos}  {i:02} -- {databox.datos}")
-        ant = databox.datos.total
+    t1 = 0
+    for i in range(tot):
+        if s.hemos_terminado():
+            break
+
+        datos = run(s)
+        if datos.total != ant:
+            nuevos = "Datos nuevos -- "
+            t1 += 1
+        else:
+            nuevos = "--------------- "
+        print(f"{nuevos}  ({datos.resto_etiq:5s}) -- {i:02} -- {datos}")
+        ant = datos.total
+
+    print(f"{t1:3d} >> tot: {t1/tot:3.2f}")

@@ -1,11 +1,19 @@
-from copy import copy
+# Sirve para poder usar "forward reference" que son declaraciones
+# y usos de anotaciones sobre tipos o clases que se definen más
+# adelante en el código (future)
+from __future__ import annotations
+
+from typing import Tuple
 
 import requests
 import logging
 
-from bs4 import BeautifulSoup
+from copy import copy
+from bs4 import BeautifulSoup, ResultSet
+
+import tools
 from centinela.scrappers.scrapper import Scrapper
-from data_box import DataBoxVerkami
+from centinela.data_box import DataboxVerkami
 
 logger = logging.getLogger(__name__)
 
@@ -17,25 +25,24 @@ class ScrapperVerkami(Scrapper):
     diversificar los tipos Webs a leer en cada caso.
 
     La propiedad privada self._data_box mantiene una referencia a un objeto
-    que implemente la clase base DataBox (en este caso sería 'DataBoxVerkami') y
-    que consiste en un dataclass con los campos específicos que se van a
+    que implemente la clase base Databox (en este caso sería 'DataboxVerkami._Datos')
+    y que consiste en un dataclass con los campos específicos que se van a
     obtener en la operación de scrapping.
     """
 
     def __init__(self, url: str, titulo: str) -> None:
         super().__init__(url=url, titulo=titulo)
+
         # Valores iniciales - Primera lectura
-        self._lectura_nueva = DataBoxVerkami()
-        self._lectura_nueva.datos.titulo = titulo
-        self._lectura_nueva.datos.restante = 0
-        self._lectura_nueva.datos.unidades = ""
-        self._lectura_nueva.datos.aportaciones = 0
-        self._lectura_nueva.datos.objetivo = 0
-        self._lectura_nueva.datos.total = 0
-        # self._lectura_nueva.datos.set_fecha()
-
-        self._lectura_anterior = copy(self._lectura_nueva)
-
+        self._datos = DataboxVerkami.new_datos(
+            titulo=titulo,
+            resto_valor=0,
+            resto_etiq="",
+            aporta_valor=0,
+            aporta_etiq="",
+            objetivo=0,
+            total=0
+        )
 
     def hemos_terminado(self) -> bool:
         """
@@ -46,65 +53,152 @@ class ScrapperVerkami(Scrapper):
         este final ha sido alcanzado. En el caso concreto de Verkami, cuando se
         ha alcanzado el límite de tiempo para el proyecto de financiación
         """
-        return self._lectura_nueva.datos.restante < 1
+        return (self._datos.resto_valor < 1
+                and self._datos.resto_etiq.capitalize() == "Segundos")
 
-
-
-    def leer_datos(self) -> DataBoxVerkami | None:
+    def leer_datos(self) -> DataboxVerkami._Datos | None:
         """
         Realiza la operación de Scrapping específica para el caso de
         un proyecto en el site de Verkami
 
-        :return: Un objeto DataBoxVerkami con los datos leídos mediante scrapping
+        :return: Un objeto DataoxVerkami._Datos con los datos leídos
+        mediante scrapping
         """
+        logger.debug("Accediendo a la página Web de Verkami mediante Scrapping")
         # Enviar solicitud GET a la página
         response = requests.get(self._url)
 
         # Verificar si la solicitud fue exitosa
         if response.status_code != 200:
-            print(f"Error {response.status_code} al obtener la página")
-            return None
+            msg = f"Error {response.status_code} al obtener la página"
+            raise ValueError(msg)
 
         # Parsear el HTML con BeautifulSoup
         soup = BeautifulSoup(response.content, 'html.parser')
 
-        # Buscar los nodos "div" con clase "counter_value"
+        # --------------------------------------------------------------------------------------
+        # Buscar los nodos "div" con clase "counter__unit"
+        # son unidades o etiquetas de los campos de contadores del proyecto Verkami
+        # --------------------------------------------------------------------------------------
+        etiqueta_1 = etiqueta_2 = etiqueta_3 = ""
         counter_unit = soup.find_all('div', class_='counter__unit')
+        etiquetas = self._get_3nodos(nodos=counter_unit)
+        if etiquetas:
+            etiqueta_1, etiqueta_2, etiqueta_3 = etiquetas
+        else:
+            msg = "No se encontraron los nodos con la clase 'counter__unit'"
+            logger.warning(msg)
 
-        # Verificar si se encontraron los nodos
-        if len(counter_unit) < 3:
-            print("No se encontraron los nodos con clase 'counter__unit'")
-            return None
+        # --------------------------------------------------------------------------------------
+        # Buscar el nodo "div" con clase "feedback__inner"
+        # --------------------------------------------------------------------------------------
+        # counter_values = soup.find_all('div', class_='feedback__inner')
+        # # Verificar si se encontraron los nodos
+        # if len(counter_values) < 1:
+        #     msg = "No se encontraron los nodos con la clase 'feedback__inner'"
+        #     logger.warning(msg)
+        #     feedback = ""
+        # else:
+        #     feedback = (counter_values[0].text.strip().replace('</', '')
+        #                 .replace('>', '').replace('<', ''))
+        #
+        # print(f"\n>>{feedback=}\n")
 
-        # Extraer los valores y convertirlos a numéricos
-        #   La etiqueta etiq_campo2 no se usa, pero se mantienen porque se podrían utilizar igual que se hace con
-        #   etiq_campo1 para identificar el nombre de las unidades a que se reifere la variabla 'valor_campo1'
-        etiq_campo1 = counter_unit[0].text.strip().split()[0].replace('í', 'i').capitalize()
-        etiq_campo2 = counter_unit[1].text.strip().capitalize()
-        importe_objetivo = float(counter_unit[2].text.strip().replace('€', '')
-                                 .replace('.', '').replace(',', '.')
-                                 .replace('De ', ''))
-
-        # Buscar los nodos "div" con clase "counter_value"
+        # --------------------------------------------------------------------------------------
+        # Buscar los nodos "div" con clase "counter__value"
+        # son los valores de los campos de contadores del proyecto Verkami
+        # --------------------------------------------------------------------------------------
+        valor_1 = valor_2 = valor_3 = ""
         counter_values = soup.find_all('div', class_='counter__value')
+        valores = self._get_3nodos(nodos=counter_values)
+        if valores:
+            valor_1, valor_2, valor_3 = valores
+        else:
+            msg = "No se encontraron los nodos con la clase 'counter__value'"
+            raise ValueError(msg)
 
-        # Verificar si se encontraron los nodos
-        if len(counter_values) < 3:
-            print("No se encontraron los nodos con clase 'counter__value'")
-            return None
+        resto_valor = 0
+        resto_etiq = ""
+        if etiqueta_1.capitalize() in ["Dias", "Horas", "Minutos", "Segundos"]:
+            resto_valor = int(valor_1)
+            resto_etiq = etiqueta_1
+        elif etiqueta_2.capitalize() in ["Dias", "Horas", "Minutos", "Segundos"]:
+            resto_valor = int(valor_2)
+            resto_etiq = etiqueta_2
+        elif etiqueta_3.capitalize() in ["Dias", "Horas", "Minutos", "Segundos"]:
+            resto_valor = int(valor_3)
+            resto_etiq = etiqueta_3
 
-        # Extraer los valores y convertirlos a numéricos
-        valor_campo1 = int(counter_values[0].text.strip().split()[0])
-        valor_campo2 = int(counter_values[1].text.strip().replace('.', ''))
-        importe_recaudado = float(counter_values[2].text.strip().replace('€', '')
-                                  .replace('.', '').replace(',', '.'))
+        aporta_valor = 0
+        aporta_etiq = ""
+        if etiqueta_1.capitalize() == "Aportaciones":
+            aporta_valor = int(valor_1)
+            aporta_etiq = etiqueta_1
+        elif etiqueta_2.capitalize() == "Aportaciones":
+            aporta_valor = int(valor_2)
+            aporta_etiq = etiqueta_2
+        elif etiqueta_3.capitalize() == "Aportaciones":
+            aporta_valor = int(valor_3)
+            aporta_etiq = etiqueta_3
 
-        self._lectura_nueva.datos.restante = valor_campo1
-        self._lectura_nueva.datos.unidades = etiq_campo1
-        self._lectura_nueva.datos.aportaciones = valor_campo2
-        self._lectura_nueva.datos.objetivo = importe_objetivo
-        self._lectura_nueva.datos.total = importe_recaudado
-        self._lectura_nueva.datos.set_fecha()
+        total_str = ""
+        obj_str = ""
+        if etiqueta_1.strip().split()[0].capitalize() == "De":
+            total_str = valor_1
+            obj_str = etiqueta_1.strip().split()[1]
+        elif etiqueta_2.strip().split()[0].capitalize() == "De":
+            total_str = valor_2
+            obj_str = etiqueta_2.strip().split()[1]
+        elif etiqueta_3.strip().split()[0].capitalize() == "De":
+            total_str = valor_3
+            obj_str = etiqueta_3.strip().split()[1]
 
-        return self._lectura_nueva
+        total = float(total_str.strip().replace('€', '')
+                      .replace('.', '')
+                      .replace(',', '.'))
+        objetivo = float(obj_str.strip().replace('€', '')
+                         .replace('.', '')
+                         .replace(',', '.'))
 
+        self._datos = DataboxVerkami.new_datos(
+            titulo=self._titulo,
+            # feedback=feedback,
+            resto_valor=resto_valor,
+            resto_etiq=resto_etiq,
+            aporta_valor=aporta_valor,
+            aporta_etiq=aporta_etiq,
+            objetivo=objetivo,
+            total=total
+        )
+
+        return self._datos
+
+    @staticmethod
+    def _get_3nodos(nodos: ResultSet) -> Tuple[str, str, str] | None:
+        """
+        Obtiene 3 nodos con etiquetas de datos (unidades)
+        o con valores de datos (valores)
+        :param nodos:
+        :return: tupla con 3 cadenas str
+        """
+        n1 = n2 = n3 = ""
+        resultado = None
+
+        if len(nodos) == 0:
+            resultado = None
+
+        elif len(nodos) > 0:
+            n1 = nodos[0].text.strip().capitalize()
+            if len(nodos) > 1:
+                n2 = nodos[1].text.strip().capitalize()
+                if len(nodos) > 2:
+                    n3 = nodos[2].text.strip().capitalize()
+
+            items = tools.reemplazar_en_lista(
+                items=[n1, n2, n3],
+                buscar=["\n", "<b>", "</b>", "<i>", "</i>"],
+                sustituir=["", "", "", "", ""]
+            )
+            resultado = (items[0], items[1], items[2])
+
+        return resultado

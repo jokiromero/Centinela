@@ -7,7 +7,10 @@ import logging
 from centinela.chatbots import ChatbotTelegram
 from centinela.scrappers.scrapper_random import ScrapperRandom
 from centinela.system_tray import CentinelaSystemTray
-from centinela.data_box import DataBoxVerkami
+from centinela.data_box import DataboxVerkami
+from centinela.scrappers.scrapper import Scrapper
+from centinela.scrappers.scrapper_random import ScrapperRandom
+from centinela.scrappers.scrapper_verkami import ScrapperVerkami
 
 MENSAJE_FIJO = "Opciones disponibles:"
 BANNER_TELEGRAM_ID = "AgACAgQAAxkBAAMTaElcxdIpY-3UdJnFwxc4V_e1KwEAArXFMRvJ5ElSVNaFlbLAShsBAAMCAAN5AAM2BA"
@@ -17,19 +20,16 @@ logger = logging.getLogger(__name__)
 
 
 async def main():
-    # TODO: Corregir que hay dos ficheros de logs: 1) en Centinela/logs/* y 2) en Centinela/centinela/logs/*
-    # TODO: Corregir que hay dos ficheros de Datos.xlsx (igual que el anterior)
-    # TODO: Revisar fichero setup.py y actualizar según la última refactorización realizada.
-    # TODO: Mensajes consecutivos aparecen con la misma fecha. Revisar dónde se está asignado la fecha a los datos.
-    # TODO: Enviar un mensaje a los usuarios cuando el bot se detenga porque se ha detenido Centinela
+    # TO-DO: Revisar fichero setup.py y actualizar según la última refactorización realizada.
     loop = asyncio.get_running_loop()
 
-    # scrap=ScrapperVerkami(url=config.URL_ISPHANYA, titulo="Proyecto 'ISPHANYA'"),
-    # scrap=ScrapperVerkami(url=config.URL_MORTADELO, titulo="Proyecto Mortadelo"),
-    scrapper = ScrapperRandom(url="ninguna", titulo="Datos sintéticos")
+    scrapper = ScrapperVerkami(url=config.URL_ISPHANYA, titulo="Proyecto 'ISPHANYA'")
+    # scrapper = ScrapperRandom(url="ninguna", titulo="Datos sintéticos")
+    # scrapper = ScrapperVerkami(url=config.URL_VIAJE_DE_NUR, titulo="El viaje de NUR")
+    # scrapper = ScrapperVerkami(url=config.URL_7291, titulo="'7291'")
 
     chatbot = ChatbotTelegram(token=config.TOKEN_TELEGRAM)
-    data_box = DataBoxVerkami(nombre_fichero_excel=config.FICHERO_EXCEL_DATOS)
+    data_box = DataboxVerkami(nombre_fichero_excel=config.FICHERO_EXCEL_DATOS)
 
     centinela_tray = CentinelaSystemTray(
         app_nombre=config.APP_NOMBRE,
@@ -48,7 +48,8 @@ async def main():
     task_bot = asyncio.create_task(chatbot.iniciar())
     task_scrapper = asyncio.create_task(centinela_tray.bucle_scrapping())
 
-    centinela_tray.registrar_tareas_async(task_bot=task_bot, task_scrap=task_scrapper)
+    centinela_tray.registrar_tareas_async(task_bot=task_bot,
+                                          task_scrap=task_scrapper)
 
     # Espera a ambas tareas asíncronas juntas
     await asyncio.gather(task_bot, task_scrapper)
@@ -57,7 +58,8 @@ async def main():
 
 # ------------------- Entry Point -------------------
 if __name__ == "__main__":
-    msg = f"Centinela. Nivel de log: {logging.getLevelName(logger.getEffectiveLevel())}"
+    msg = (f"Centinela. Nivel de log: "
+           f"{logging.getLevelName(logger.getEffectiveLevel())}")
     logger.info(msg)
     print(msg)
 
