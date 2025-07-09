@@ -11,6 +11,7 @@ from centinela.data_box import DataboxVerkami
 from centinela.scrappers.scrapper import Scrapper
 from centinela.scrappers.scrapper_random import ScrapperRandom
 from centinela.scrappers.scrapper_verkami import ScrapperVerkami
+from centinela.config import Param, get, DOTENV_PATH
 
 MENSAJE_FIJO = "Opciones disponibles:"
 BANNER_TELEGRAM_ID = "AgACAgQAAxkBAAMTaElcxdIpY-3UdJnFwxc4V_e1KwEAArXFMRvJ5ElSVNaFlbLAShsBAAMCAAN5AAM2BA"
@@ -19,20 +20,18 @@ config.configurar_logging()
 logger = logging.getLogger(__name__)
 
 
+
 async def main():
-    # TO-DO: Revisar fichero setup.py y actualizar según la última refactorización realizada.
+    # TO-DO: Revisar fichero setup.py y actualizar según la última refactorización.
     loop = asyncio.get_running_loop()
 
-    scrapper = ScrapperVerkami(url=config.URL_ISPHANYA, titulo="Proyecto 'ISPHANYA'")
-    # scrapper = ScrapperRandom(url="ninguna", titulo="Datos sintéticos")
-    # scrapper = ScrapperVerkami(url=config.URL_VIAJE_DE_NUR, titulo="El viaje de NUR")
-    # scrapper = ScrapperVerkami(url=config.URL_7291, titulo="'7291'")
+    scrapper = ScrapperVerkami(url=config.URL_SCRAPPING, titulo=config.URL_TITULO)
 
     chatbot = ChatbotTelegram(token=config.TOKEN_TELEGRAM)
     data_box = DataboxVerkami(nombre_fichero_excel=config.FICHERO_EXCEL_DATOS)
 
     centinela_tray = CentinelaSystemTray(
-        app_nombre=config.APP_NOMBRE,
+        app_nombre=get(Param.APP_NOMBRE, DOTENV_PATH),
         scrapper=scrapper,
         data_box=data_box,
         chatbot=chatbot,

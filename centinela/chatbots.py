@@ -95,6 +95,7 @@ class ChatbotTelegram(Chatbot):
         )
         self._activo = False
         self._task = None
+        self._start_polling = False
 
     def _register_handlers(self):
         # self._dp.message.register(self._handle_start, Command(commands=["start"]))
@@ -171,7 +172,6 @@ class ChatbotTelegram(Chatbot):
                    f"¡¡Vuelve cuando quieras...!!")
         else:
             msg = f"{msg}: no estás suscrito a las notificaciones de Centinela."
-
         caption = self._get_estado(chat_id=message.chat.id,
                                    usuario=message.chat.full_name)
         await self._bot.send_photo(
@@ -208,12 +208,12 @@ class ChatbotTelegram(Chatbot):
     async def iniciar(self):
         try:
             await self._dp.start_polling(self._bot, skip_updates=True)
+            self._start_polling = True
 
         except asyncio.CancelledError:
             logger.info("Bot cancelado...")
             await self._dp.storage.close()
             await self._bot.session.close()
-            raise
 
     async def parar(self):
         # En aiogram, puedes cerrar el bot manualmente si lo necesitas
@@ -227,7 +227,10 @@ class ChatbotTelegram(Chatbot):
             )
             await self.desactivar()
 
-        await self._dp.stop_polling()
+        if self._start_polling:
+            await self._dp.stop_polling()
+            self._start_polling = False
+
         await self._dp.storage.close()
         await self._bot.session.close()
         logger.info("Bot detenido.")

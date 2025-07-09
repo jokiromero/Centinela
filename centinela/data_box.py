@@ -165,6 +165,7 @@ class DataboxVerkami(Databox):
     @dataclass(frozen=True, slots=True)
     class _Datos(Databox._Datos):
         titulo: str = ""
+        feedback: str = ""
         resto_valor: int = 0
         resto_etiq: str = ""
         aporta_valor: int = 0
@@ -187,6 +188,7 @@ class DataboxVerkami(Databox):
         # self._datos = self._datos_anteriores = datos  (esto se hace en super())
         self._col = {
             "ti": "titulo",  # Un nombre diferenciador para mostrar
+            "fb": "feedback",  # Indica cuándo se acabé el proyecto y si está en preventa
             "f": "fecha",  # La fecha de la lectura
             "rv": "resto_valor",  # Valor de tiempo que resta para terminar el Verkami
             "re": "resto_etiq",  # Unidades (dias, horas, ...) del tiempo que resta
@@ -218,17 +220,18 @@ class DataboxVerkami(Databox):
 
                 self._datos = DataboxVerkami.new_datos(
                     titulo=fila[self.col("Ti")],
+                    feedback=fila[self.col("Fb")],
                     fecha=fila[self.col("F")],
                     resto_valor=fila[self.col("Rv")],
                     resto_etiq=fila[self.col("Re")],
                     aporta_valor=fila[self.col("Av")],
-                    aporta_etiq = fila[self.col("Ae")],
+                    aporta_etiq=fila[self.col("Ae")],
                     objetivo=fila[self.col("O")],
                     total=fila[self.col("T")]
                 )
 
-    def col(self, key: Literal["ti", "Ti", "f", "F", "rv", "Rv", "re", "Re",
-    "av", "Av", "ae", "Ae", "o", "O", "t", "T"]) -> str:
+    def col(self, key: Literal["ti", "Ti", "f", "F", "fb", "Fb",
+    "rv", "Rv", "re", "Re", "av", "Av", "ae", "Ae", "o", "O", "t", "T"]) -> str:
         return self._col[key]
 
     def _validar_campos(self) -> bool:
@@ -270,6 +273,7 @@ class DataboxVerkami(Databox):
     def new_datos(
             cls: Type[T], *,
             titulo: str,
+            feedback: str,
             resto_valor: int,
             resto_etiq: str,
             aporta_valor: int,
@@ -324,6 +328,7 @@ class DataboxVerkami(Databox):
                 or self.datos.resto_valor != self._datos_anteriores.resto_valor
                 or self.datos.resto_etiq != self._datos_anteriores.resto_etiq
                 or self.datos.total != self._datos_anteriores.total
+                or self.datos.feedback != self._datos_anteriores.feedback
         ):
             ret = True
         return ret
@@ -349,12 +354,14 @@ class DataboxVerkami(Databox):
             df = pd.DataFrame(asdict(datos), index=[0])
             columnas_1 = [self.col("ti"), self.col("f"), self.col("o")]
             columnas_2 = [self.col("rv"), self.col("re"), self.col("av"),
-                          self.col("ae"),  self.col("t")]
+                          self.col("ae"), self.col("t")]
+            columnas_3 = self.col("fb")
             linea1 = "\n" + df[columnas_1].to_string(index=False)
             linea2 = "\n" + df[columnas_2].to_string(index=False)
+            linea3 = "\n" + df[columnas_3].to_string(index=False)
             largo = int(max(len(linea1), len(linea2)) / 2)
             rayas = "\n" + "-" * largo
-            fmt = linea1 + rayas + linea2 + rayas
+            fmt = (linea1 + rayas + linea2 + rayas + linea3 + rayas)
             return fmt
 
         def _formato_b(datos: DataboxVerkami._Datos) -> str:
@@ -397,12 +404,12 @@ class DataboxVerkami(Databox):
         if ((config.tipo_notificaciones_activo == config.Notificaciones.TODOS_LOS_INTERVALOS or
              (config.tipo_notificaciones_activo == config.Notificaciones.SOLO_CAMBIOS
               and self.datos_cambiados)) or es_una_repeticion):
-            texto_cambio = ""
+            texto_cambio = "\n" + self.datos.feedback if self.datos.feedback else ""
             if self.datos_cambiados:
-                texto_cambio = "** ¡NUEVOS DATOS! **"
+                texto_cambio = f"** ¡NUEVOS DATOS! **{self.datos.feedback}"
                 melodia = winotify.audio.LoopingAlarm4
             else:
-                texto_cambio = "... (sin cambios) ..."
+                texto_cambio = f"... (sin cambios) ...{self.datos.feedback}"
                 melodia = winotify.audio.LoopingCall2
 
             numero = num2words(number=self.datos.total, lang="es")
@@ -422,10 +429,10 @@ class DataboxVerkami(Databox):
                         keyboard=True, parse_mode=ParseMode.HTML
                     )
 
-        logger.info(f"Lectura de datos desde: {self.datos.titulo}  -->>  "
-                    f"{self.datos.fecha}  ({config.tupla_intervalo_activo[0]})")
+        logger.debug(f"Lectura de datos desde: {self.datos.titulo}  -->>  "
+                     f"{self.datos.fecha}  ({config.tupla_intervalo_activo[0]})")
         formato = FormatoSalida.AB
-        logger.info(f"mostrar_datos() (formato '{formato.value}') -->> \n{self.salida_formateada_str(formato)}\n")
+        logger.debug(f"mostrar_datos() (formato '{formato.value}') -->> \n{self.salida_formateada_str(formato)}\n")
 
 
 if __name__ == "__main__":
@@ -449,7 +456,6 @@ if __name__ == "__main__":
         print(f"{dv._datos_anteriores=}")
         print(f"{dv.datos_cambiados=}")
 
-
         # for f in FormatoSalida.__members__.values():
         #     print(f">> Salida '{f.value}'" + ("-" * 60))
         #     print(dv.salida_formateada_str(formato=f))
@@ -457,13 +463,13 @@ if __name__ == "__main__":
         time.sleep(10)
         dv.actualizar_datos(
             datos_nuevos=DataboxVerkami.new_datos(
-                titulo = "Datos cambiados",
-                objetivo = 2222,
-                resto_etiq = "Dias",
-                resto_valor = 2,
-                aporta_valor = 222,
-                aporta_etiq = "Aportaciones",
-                total = 11119.99
+                titulo="Datos cambiados",
+                objetivo=2222,
+                resto_etiq="Dias",
+                resto_valor=2,
+                aporta_valor=222,
+                aporta_etiq="Aportaciones",
+                total=11119.99
             )
         )
         print(f"Prueba 2 DataboxVerkami: \n{dv.salida_formateada_str(formato=FormatoSalida.A)}")
@@ -473,14 +479,14 @@ if __name__ == "__main__":
         time.sleep(5)
         dv.actualizar_datos(
             DataboxVerkami.new_datos(
-                titulo = "Datos cambiados",
-                objetivo = 2222,
-                resto_etiq = dv.datos.resto_etiq,
-                resto_valor = dv.datos.resto_valor,
-                aporta_valor = dv.datos.aporta_valor,
-                aporta_etiq = dv.datos.aporta_etiq,
-                total = dv.datos.total
-        )
+                titulo="Datos cambiados",
+                objetivo=2222,
+                resto_etiq=dv.datos.resto_etiq,
+                resto_valor=dv.datos.resto_valor,
+                aporta_valor=dv.datos.aporta_valor,
+                aporta_etiq=dv.datos.aporta_etiq,
+                total=dv.datos.total
+            )
         )
         print(f"Prueba 3 DataboxVerkami: \n{dv.salida_formateada_str(formato=FormatoSalida.A)}")
         print(f"{dv._datos_anteriores=}")

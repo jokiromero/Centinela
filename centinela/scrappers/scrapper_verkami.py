@@ -3,15 +3,13 @@
 # adelante en el código (future)
 from __future__ import annotations
 
-from typing import Tuple
-
 import requests
 import logging
+import tools
 
-from copy import copy
 from bs4 import BeautifulSoup, ResultSet
 
-import tools
+from typing import Tuple
 from centinela.scrappers.scrapper import Scrapper
 from centinela.data_box import DataboxVerkami
 
@@ -36,6 +34,7 @@ class ScrapperVerkami(Scrapper):
         # Valores iniciales - Primera lectura
         self._datos = DataboxVerkami.new_datos(
             titulo=titulo,
+            feedback="",
             resto_valor=0,
             resto_etiq="",
             aporta_valor=0,
@@ -76,6 +75,15 @@ class ScrapperVerkami(Scrapper):
         # Parsear el HTML con BeautifulSoup
         soup = BeautifulSoup(response.content, 'html.parser')
 
+
+        # --------------------------------------------------------------------------------------
+        # Buscar el nodo que contiene el título del proyecto
+        # --------------------------------------------------------------------------------------
+        titulo = ""
+        nodo = soup.find(name='h1', class_='project-hero__title gap-l')
+        if nodo:
+            titulo = nodo.get_text(strip=True).capitalize()
+
         # --------------------------------------------------------------------------------------
         # Buscar los nodos "div" con clase "counter__unit"
         # son unidades o etiquetas de los campos de contadores del proyecto Verkami
@@ -87,22 +95,8 @@ class ScrapperVerkami(Scrapper):
             etiqueta_1, etiqueta_2, etiqueta_3 = etiquetas
         else:
             msg = "No se encontraron los nodos con la clase 'counter__unit'"
-            logger.warning(msg)
-
-        # --------------------------------------------------------------------------------------
-        # Buscar el nodo "div" con clase "feedback__inner"
-        # --------------------------------------------------------------------------------------
-        # counter_values = soup.find_all('div', class_='feedback__inner')
-        # # Verificar si se encontraron los nodos
-        # if len(counter_values) < 1:
-        #     msg = "No se encontraron los nodos con la clase 'feedback__inner'"
-        #     logger.warning(msg)
-        #     feedback = ""
-        # else:
-        #     feedback = (counter_values[0].text.strip().replace('</', '')
-        #                 .replace('>', '').replace('<', ''))
-        #
-        # print(f"\n>>{feedback=}\n")
+            logger.error(msg)
+            raise ValueError(msg)
 
         # --------------------------------------------------------------------------------------
         # Buscar los nodos "div" con clase "counter__value"
@@ -115,19 +109,26 @@ class ScrapperVerkami(Scrapper):
             valor_1, valor_2, valor_3 = valores
         else:
             msg = "No se encontraron los nodos con la clase 'counter__value'"
+            logger.error(msg)
             raise ValueError(msg)
 
         resto_valor = 0
         resto_etiq = ""
-        if etiqueta_1.capitalize() in ["Dias", "Horas", "Minutos", "Segundos"]:
+        valores = ["Dias", "Días", "Horas", "Minutos", "Segundos"]
+        if etiqueta_1.capitalize() in valores:
             resto_valor = int(valor_1)
             resto_etiq = etiqueta_1
-        elif etiqueta_2.capitalize() in ["Dias", "Horas", "Minutos", "Segundos"]:
+        elif etiqueta_2.capitalize() in valores:
             resto_valor = int(valor_2)
             resto_etiq = etiqueta_2
-        elif etiqueta_3.capitalize() in ["Dias", "Horas", "Minutos", "Segundos"]:
+        elif etiqueta_3.capitalize() in valores:
             resto_valor = int(valor_3)
             resto_etiq = etiqueta_3
+        else:
+            raise KeyError(f"Valor incorrecto. Se han recibido los datos: \n"
+                           f"'{etiqueta_1}', '{etiqueta_2}' y '{etiqueta_3}'\n"
+                           f"... y ninguno de ellos coindice con uno de los siguientes:\n"
+                           f"'{valores}'")
 
         aporta_valor = 0
         aporta_etiq = ""
@@ -160,9 +161,21 @@ class ScrapperVerkami(Scrapper):
                          .replace('.', '')
                          .replace(',', '.'))
 
+        # --------------------------------------------------------------------------------------
+        # Buscar el nodo de clase "feedback__inner" que indica el estado final del proyecto
+        # está relleno para proyectos terminados y en preventa tras el fin de la financiación
+        # --------------------------------------------------------------------------------------
+        feedback = ""
+        nodo = soup.find(name='div', class_='feedback__inner')
+        if nodo:
+            feedback = nodo.get_text(strip=True).capitalize()
+
+        print(f"\n>>{feedback=}\n")
+
+
         self._datos = DataboxVerkami.new_datos(
-            titulo=self._titulo,
-            # feedback=feedback,
+            titulo=titulo if titulo else self._titulo,
+            feedback=feedback,
             resto_valor=resto_valor,
             resto_etiq=resto_etiq,
             aporta_valor=aporta_valor,
@@ -184,21 +197,13 @@ class ScrapperVerkami(Scrapper):
         n1 = n2 = n3 = ""
         resultado = None
 
-        if len(nodos) == 0:
-            resultado = None
-
-        elif len(nodos) > 0:
-            n1 = nodos[0].text.strip().capitalize()
+        if len(nodos) > 0:
+            n1 = nodos[0].get_text(strip=True).capitalize()
             if len(nodos) > 1:
-                n2 = nodos[1].text.strip().capitalize()
+                n2 = nodos[1].get_text(strip=True).capitalize()
                 if len(nodos) > 2:
-                    n3 = nodos[2].text.strip().capitalize()
+                    n3 = nodos[2].get_text(strip=True).capitalize()
 
-            items = tools.reemplazar_en_lista(
-                items=[n1, n2, n3],
-                buscar=["\n", "<b>", "</b>", "<i>", "</i>"],
-                sustituir=["", "", "", "", ""]
-            )
-            resultado = (items[0], items[1], items[2])
+            resultado = (n1, n2, n3)
 
         return resultado
