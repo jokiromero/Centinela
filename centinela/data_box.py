@@ -435,24 +435,273 @@ class DataboxVerkami(Databox):
         logger.debug(f"mostrar_datos() (formato '{formato.value}') -->> \n{self.salida_formateada_str(formato)}\n")
 
 
+class DataboxCripto(Databox):
+    """
+    Clase que representa el conjunto de datos leídos del site de cotización
+    de criptomonedas junto a sus métodos y formatos de visualización y persistencia
+    """
+
+    # noinspection DuplicatedCode
+    @dataclass(frozen=True, slots=True)
+    class _Datos(Databox._Datos):
+        titulo: str = ""
+        moneda: str = ""
+        importe: float = 0.0
+        delta: float = 0.0
+        fecha: str = field(
+            default_factory=lambda: datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        )
+
+        def _set_fecha(self) -> DataboxCripto._Datos:
+            nueva_fecha = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+            return dataclasses.replace(self, fecha=nueva_fecha)
+
+    def __init__(self, datos: DataboxCripto._Datos | None = None,
+                 nombre_fichero_excel: str | os.PathLike | None = None):
+        super().__init__(datos)
+        self._nombre_fichero = nombre_fichero_excel
+        self._df_historia = None
+        # self._datos = self._datos_anteriores = datos  (esto se hace en super())
+        self._col = {
+            "ti": "titulo",  # Un nombre diferenciador para mostrar
+            "m": "moneda",  # Nombre de la moneda
+            "i": "importe",  # Valor de cotización
+            "d": "delta",  # Variación de valor en porcentaje
+            "f": "fecha"  # La fecha de la lectura
+        }
+        # Añade entradas en mayúsculas que serán usadas en visualización
+        # las minúsculas son para columnas del DataFrame y nombres internos de campos
+        nuevas_entradas = {
+            k.capitalize(): v.capitalize()
+            for k, v in self._col.items()
+            if k.capitalize() not in self._col
+        }
+        self._col.update(nuevas_entradas)
+
+        if self._nombre_fichero:
+            if os.path.isfile(self._nombre_fichero):
+                self._df_historia = pd.read_excel(self._nombre_fichero)
+                self._validar_campos()
+
+                if self._df_historia.shape[0] == 0 or self._df_historia.empty:
+                    raise ValueError(f"Fichero vacío '{self._nombre_fichero}'")
+
+                # Ordenar por fecha y tomar la última fila
+                self._df_historia.sort_values(by=self.col("F"), inplace=True)
+                fila = self._df_historia.iloc[-1]
+
+                self._datos = DataboxCripto.new_datos(
+                    titulo=fila[self.col("ti")],
+                    moneda=fila[self.col("m")],
+                    importe=fila[self.col("i")],
+                    delta=fila[self.col("d")],
+                    fecha=fila[self.col("f")]
+                )
+
+    def col(self, key: Literal["ti", "Ti", "m", "M", "i", "I", "d", "D", "f", "F"]) -> str:
+        return self._col[key]
+
+    def _validar_campos(self) -> bool:
+        # Campos definidos en la dataclass
+        if not self.datos:
+            self._datos = DataboxCripto._Datos()
+        campos_lectura = {campo.name for campo in fields(self.datos)}
+
+        # Columnas del DataFrame
+        campos_df = set(
+            [col.lower() for col in self._df_historia.columns]
+        )
+
+        # Comparación entre los campos leídos del Excel y los campos del data_box
+        campos_faltantes = campos_lectura - campos_df
+        campos_sobrantes = campos_df - campos_lectura
+
+        if campos_faltantes or campos_sobrantes:
+            msg = "❌ Las columnas del Excel no coinciden con los campos que se esperaban...\n"
+            if campos_faltantes:
+                msg += f"🔺 Campos faltantes en el Excel: {sorted(campos_faltantes)}\n"
+            if campos_sobrantes:
+                msg += f"🔻 Columnas sobrantes en el Excel: {sorted(campos_sobrantes)}\n"
+            raise KeyError(msg)
+
+        return True
+
+    @property
+    def datos(self) -> DataboxCripto._Datos:
+        """
+        Esta propiedad se ha repetido en la subclase splo para que
+        el IDE de Pycharm pueda hacer su revisión estática de tipos y no
+        señale errores de tipos en esta clase interna
+        """
+        return self._datos
+
+    @overload
+    @classmethod
+    def new_datos(
+            cls: Type[T], *,
+            titulo: str,
+            moneda: str,
+            importe: float,
+            delta: float,
+            fecha: str
+    ) -> DataboxCritpo._Datos:
+        ...
+        """Esta firma de new_datos es sólo para definir los tipos para el IDE PyCharm"""
+
+    @classmethod
+    def new_datos(cls, **kwargs: Any) -> DataboxCripto._Datos:
+        """
+        Se sobre escribe el método new_datos pero solamente para delegar
+        sobre el superclase porque así se cumple que exista un método definido
+        a continuación de un método decorado con @overload
+        :param kwargs:
+        :return:
+        """
+        return super().new_datos(**kwargs)
+
+    def actualizar_datos(self, datos_nuevos: DataboxCripto._Datos) -> None:
+        # Antes sustituir la lectura nueva, saca una copia como lectura anterior
+        self._datos_anteriores = self._datos
+        # Y ahora puede ya machacarla con el nuevo valor recién leído
+        self._datos = datos_nuevos
+
+        # if self._datos_anteriores is None:
+        #     self._datos_anteriores = self._datos
+
+        if self.datos_cambiados:
+            # Persistencia de datos en fichero Excel
+            d = asdict(datos_nuevos)
+            for clave in list(d.keys()):
+                d[clave.capitalize()] = d.pop(clave)
+            nueva_fila = pd.DataFrame(d, index=[0])
+            self._df_historia = pd.concat(
+                objs=[self._df_historia, nueva_fila], ignore_index=True
+            )
+
+            if self._nombre_fichero:
+                self.persistir_datos()
+
+    @property
+    def datos_cambiados(self) -> bool:
+        ret = False
+        if (
+                self._datos_anteriores is None
+                or self.datos.titulo != self._datos_anteriores.titulo
+                or (self.datos.fecha == "" and self._datos_anteriores.fecha != "")
+                or self.datos.nombre != self._datos_anteriores.nombre
+                or self.datos.importe != self._datos_anteriores.importe
+                or self.datos.delta != self._datos_anteriores.delta
+        ):
+            ret = True
+        return ret
+
+    def persistir_datos(self) -> None:
+        if self._nombre_fichero:
+            df = self._df_historia.copy()
+            df.columns = [col.capitalize() for col in df.columns]
+            tools.exportar_excel(fich=self._nombre_fichero, data={"Hoja1": df})
+            logger.info(f"Los datos han sido guardados en el fichero Excel "
+                        f"'{self._nombre_fichero}'")
+
+        else:
+            logger.warning("No se ha suministrado un nombre de fichero Excel "
+                           "para almacenar los datos leídos")
+
+    def salida_formateada_str(self, formato: FormatoSalida = FormatoSalida.A) -> str:
+        def _formato_a(datos: DataboxCripto._Datos) -> str:
+            df = pd.DataFrame(asdict(datos), index=[0])
+            return df.to_string(index=False)
+
+        def _formato_ab(datos: DataboxCripto._Datos) -> str:
+            df = pd.DataFrame(asdict(datos), index=[0])
+            columnas_1 = [self.col("ti"), self.col("f")]
+            columnas_2 = [self.col("m"), self.col("i"), self.col("d")]
+            linea1 = "\n" + df[columnas_1].to_string(index=False)
+            linea2 = "\n" + df[columnas_2].to_string(index=False)
+            largo = int(max(len(linea1), len(linea2)) / 2)
+            rayas = "\n" + "-" * largo
+            fmt = (linea1 + rayas + linea2 + rayas)
+            return fmt
+
+        def _formato_b(datos: DataboxCripto._Datos) -> str:
+            fmt = f"{datos.fecha}: {datos.titulo}\n"
+            fmt += (f"{self.col('m')}: {datos.moneda:,.0f} €, "
+                    f"{datos.importe:,.2f} {datos.delta:,.2f}%\n")
+            return fmt
+
+        def _formato_c(datos: DataboxCripto._Datos) -> str:
+            fmt = f"<b>{datos.fecha}</b>: {datos.titulo:28}\n"
+            fmt += (f"{self.col('M')}: <b>{datos.moneda}</b>, "
+                    f"Importe: <b>{datos.importe:,.2f} €  -- "
+                    f"{datos.delta:,.2f}</b>\n")
+            return f"<code>{fmt}</code>"
+
+        salida = ""
+
+        if formato == "a":
+            salida = _formato_a(self.datos)
+        elif formato == "b":
+            salida = _formato_b(self.datos)
+        elif formato == "c":
+            salida = _formato_c(self.datos)
+        elif formato == "ab":
+            salida = _formato_ab(self.datos)
+
+        return salida
+
+    # noinspection SpellCheckingInspection
+    async def mostrar_datos(self, es_una_repeticion=False, con_voz=False,
+                            chatbot: Chatbot | None = None):
+        if ((config.tipo_notificaciones_activo == config.Notificaciones.TODOS_LOS_INTERVALOS or
+             (config.tipo_notificaciones_activo == config.Notificaciones.SOLO_CAMBIOS
+              and self.datos_cambiados)) or es_una_repeticion):
+            texto_cambio = ""
+            if self.datos_cambiados:
+                texto_cambio = f"** ¡NUEVOS DATOS! **"
+                melodia = winotify.audio.LoopingAlarm4
+            else:
+                texto_cambio = f"... (sin cambios) ..."
+                melodia = winotify.audio.LoopingCall2
+
+            numero = num2words(number=self.datos.total, lang="es")
+            msg_voz = f"Atención: se ha alcanzado un total de {numero} euros"
+            msg1 = self.salida_formateada_str(formato=FormatoSalida.B)
+            tools.mostrar_notificacion(
+                titulo=texto_cambio,
+                msg=msg1,
+                msg_hablado=msg_voz if con_voz else "",
+                sonido=melodia
+            )
+            if chatbot:
+                if chatbot.esta_activo:
+                    msg2 = self.salida_formateada_str(formato=FormatoSalida.C)
+                    await chatbot.enviar_mensaje_a_suscriptores(
+                        texto=texto_cambio + "\n" + msg2,
+                        keyboard=True, parse_mode=ParseMode.HTML
+                    )
+
+        logger.debug(f"Lectura de datos desde: {self.datos.titulo}  -->>  "
+                     f"{self.datos.fecha}  ({config.tupla_intervalo_activo[0]})")
+        formato = FormatoSalida.AB
+        logger.debug(f"mostrar_datos() (formato '{formato.value}') -->> \n{self.salida_formateada_str(formato)}\n")
+
+
+
+
 if __name__ == "__main__":
     # Pruebas del módulo
     def main_1():
-        data = DataboxVerkami.new_datos(
+        data = DataboxCripto.new_datos(
             titulo="Prueba de datos nuevos",
-            objetivo=1111,
-            resto_etiq="Horas",
-            resto_valor=1,
-            aporta_valor=111,
-            aporta_etiq="Aportaciones",
-            total=11119.99
-
+            moneda="Dólar de prueba",
+            importe=12.443313,
+            delta=10.3553,
         )
         print(f"Prueba: {data=}")
 
-        dv = DataboxVerkami(nombre_fichero_excel=config.FICHERO_EXCEL_TEST)
+        dv = DataboxCripto(nombre_fichero_excel=config.FICHERO_EXCEL_TEST)
         dv.actualizar_datos(datos_nuevos=data)
-        print(f"Prueba 1 DataboxVerkami: \n{dv.salida_formateada_str(formato=FormatoSalida.A)}")
+        print(f"Prueba 1 DataboxCripto: \n{dv.salida_formateada_str(formato=FormatoSalida.A)}")
         print(f"{dv._datos_anteriores=}")
         print(f"{dv.datos_cambiados=}")
 
@@ -462,66 +711,52 @@ if __name__ == "__main__":
         #     print("")
         time.sleep(10)
         dv.actualizar_datos(
-            datos_nuevos=DataboxVerkami.new_datos(
-                titulo="Datos cambiados",
-                objetivo=2222,
-                resto_etiq="Dias",
-                resto_valor=2,
-                aporta_valor=222,
-                aporta_etiq="Aportaciones",
-                total=11119.99
+            datos_nuevos=DataboxCripto.new_datos(
+                titulo="Prueba de datos nuevos  -2-",
+                moneda="Dólar de prueba",
+                importe=400.23,
+                delta=11.983,
             )
         )
-        print(f"Prueba 2 DataboxVerkami: \n{dv.salida_formateada_str(formato=FormatoSalida.A)}")
+        print(f"Prueba 2 DataboxCripto: \n{dv.salida_formateada_str(formato=FormatoSalida.A)}")
         print(f"{dv._datos_anteriores=}")
         print(f"{dv.datos_cambiados=}")
 
         time.sleep(5)
         dv.actualizar_datos(
-            DataboxVerkami.new_datos(
+            DataboxCripto.new_datos(
                 titulo="Datos cambiados",
-                objetivo=2222,
-                resto_etiq=dv.datos.resto_etiq,
-                resto_valor=dv.datos.resto_valor,
-                aporta_valor=dv.datos.aporta_valor,
-                aporta_etiq=dv.datos.aporta_etiq,
-                total=dv.datos.total
+                moneda="Dólar de prueba 2",
+                importe=44.235,
+                delta=45.827,
             )
         )
-        print(f"Prueba 3 DataboxVerkami: \n{dv.salida_formateada_str(formato=FormatoSalida.A)}")
+        print(f"Prueba 3 DataboxCripto: \n{dv.salida_formateada_str(formato=FormatoSalida.A)}")
         print(f"{dv._datos_anteriores=}")
         print(f"{dv.datos_cambiados=}")
 
 
     def main_2():
-        dv = DataboxVerkami(datos=DataboxVerkami.new_datos(
+        dv = DataboxCripto(datos=DataboxCripto.new_datos(
             titulo="Datos cambiados",
-            objetivo=1111,
-            resto_etiq="Dias",
-            resto_valor=1,
-            aporta_valor=11,
-            aporta_etiq="Aportaciones",
-            total=11119.99
-
+            moneda="Dólar de prueba",
+            importe=4444.44,
+            delta=444,
         ))
-        print(f"Prueba 1 DataboxVerkami: \n{dv.salida_formateada_str(formato=FormatoSalida.A)}")
+        print(f"Prueba 1 DataboxCripto: \n{dv.salida_formateada_str(formato=FormatoSalida.A)}")
 
         dv.actualizar_datos(
-            DataboxVerkami.new_datos(
+            DataboxCripto.new_datos(
                 titulo="Datos cambiados",
                 fecha="2023-12-31 00:00:00",
-                objetivo=2222,
-                resto_etiq="Horas",
-                resto_valor=2,
-                aporta_valor=222,
-                aporta_etiq="Aportaciones",
-                total=22229.99
-
+                moneda="Dólar de prueba",
+                importe=4444.44,
+                delta=444,
             )
         )
-        print(f"Prueba 2 DataboxVerkami: \n{dv.salida_formateada_str(formato=FormatoSalida.A)}")
+        print(f"Prueba 2 DataboxCripto: \n{dv.salida_formateada_str(formato=FormatoSalida.A)}")
 
 
     # ----------------------------- PRUEBAS --------------------------
     # asyncio.run(main_1())
-    main_1()
+    main_2()

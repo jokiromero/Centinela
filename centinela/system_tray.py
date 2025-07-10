@@ -85,7 +85,6 @@ class CentinelaSystemTray:
         self._chatbot = chatbot
         self._loop = loop
 
-        # self._centinela_system_tray = Icon(config.APP_NOMBRE, self._get_logo(), menu=self._get_menu())
         self._system_tray = Icon(app_nombre)
         self._system_tray.icon = self._get_logo()
         self._system_tray.menu = self._get_menu()
@@ -93,6 +92,16 @@ class CentinelaSystemTray:
 
         self._task_bot = None
         self._task_scrap = None
+
+        # Se asegura que el Scrapper asignado a CentinelaSystemTray tiene un objeto
+        # datos compatible (de la misma clase) que el objeto datos que incluye el Databox
+        # asociado
+        if type(self._scrapper.datos) is not type(self._data_box.datos):
+            raise TypeError(f"CentinelaSystemTray requiere que sus propiedades 'scrapper' "
+                            f"y 'data_box' tengan ambas el mismo tipo de 'Datos' "
+                            f"(sean objetos instancia de la misma clase 'Datos')\n"
+                            f"{type(self._scrapper.datos)=}\n"
+                            f"{type(self._data_box.datos)=}")
 
     async def bucle_scrapping(self):
         logger.info("Comienza el bucle principal 'bucle_scrapping()'...")

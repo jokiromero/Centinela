@@ -28,6 +28,7 @@ class ScrapperRandom(Scrapper):
         # Valores iniciales - Primera lectura
         self._datos = DataboxVerkami.new_datos(
             titulo=self._titulo,
+            feedback="",
             resto_valor=random.choices(
                     population=[5, 16, 30],  weights=[100, 1, 1]
             )[0],
@@ -70,6 +71,7 @@ class ScrapperRandom(Scrapper):
                     nuevo_titulo += " (TERMINADO) "
                 self._datos = DataboxVerkami.new_datos(
                     titulo=nuevo_titulo,
+                    feedback="Aquí se dice si este proyecto está en PREVENTA!!",
                     resto_valor=nuevo_restante,
                     resto_etiq="Días",
                     aporta_valor=self._datos.aporta_valor + delta_aportaciones,
