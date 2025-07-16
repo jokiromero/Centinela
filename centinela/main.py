@@ -1,7 +1,7 @@
 import asyncio
 import threading
 
-import config
+from centinela import config
 import logging
 
 from centinela.chatbots import ChatbotTelegram
@@ -14,7 +14,7 @@ from centinela.scrappers.scrapper_random import ScrapperRandom
 from centinela.scrappers.scrapper_verkami import ScrapperVerkami
 from centinela.scrappers.scrapper_cripto import ScrapperCripto
 from centinela.config import Param, get, DOTENV_PATH
-from scrappers.scrapper_cripto import ScrapperCripto
+from centinela.scrappers.scrapper_cripto import ScrapperCripto
 
 MENSAJE_FIJO = "Opciones disponibles:"
 BANNER_TELEGRAM_ID = "AgACAgQAAxkBAAMTaElcxdIpY-3UdJnFwxc4V_e1KwEAArXFMRvJ5ElSVNaFlbLAShsBAAMCAAN5AAM2BA"

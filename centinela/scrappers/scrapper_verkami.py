@@ -5,7 +5,6 @@ from __future__ import annotations
 
 import requests
 import logging
-import tools
 
 from bs4 import BeautifulSoup, ResultSet
 

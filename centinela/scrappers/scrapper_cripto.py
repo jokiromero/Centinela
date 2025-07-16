@@ -6,8 +6,7 @@ from __future__ import annotations
 import requests
 import logging
 
-import config
-import tools
+from centinela import config
 
 from bs4 import BeautifulSoup, ResultSet
 

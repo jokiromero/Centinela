@@ -9,15 +9,15 @@ from typing import Callable, Any, Coroutine
 
 import winotify
 
-import config
-import tools
+from centinela import config
+from centinela import tools
 
 from PIL import ImageFile
 from pystray import Icon, Menu, MenuItem
 
 from centinela.chatbots import Chatbot
 from centinela.data_box import Databox
-from scrappers.scrapper import Scrapper
+from centinela.scrappers.scrapper import Scrapper
 
 logger = logging.getLogger(__name__)
 

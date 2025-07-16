@@ -7,21 +7,21 @@ import dataclasses
 import logging
 import os
 import time
+from abc import ABC, abstractmethod
+from dataclasses import asdict
+from dataclasses import dataclass, fields, field
+from datetime import datetime
+from enum import Enum
+from typing import Literal, TypeVar, Type, Any, overload
 
 import pandas as pd
 import winotify
-import config
-import tools
-
-from abc import ABC, abstractmethod
-from enum import Enum
-from dataclasses import dataclass, fields, field
-from datetime import datetime
-from typing import Literal, TypeVar, Type, Any, overload
-from dataclasses import asdict
 from aiogram.enums import ParseMode
 from num2words import num2words
-from chatbots import Chatbot
+
+from centinela import config
+from centinela import tools
+from centinela.chatbots import Chatbot
 
 # definimos T como cualquier subclase de Databox()
 T = TypeVar("T", bound="Databox")
